@@ -1,0 +1,263 @@
+# PantsMini QC thresholds
+# Pass this file with --thresholds-yaml to the summarizer or QC agent.
+
+# ── Threshold source metadata ────────────────────────────────────────────────
+# Calibrated threshold files must keep the same schema and set method=calibrated.
+THRESHOLD_METADATA:
+  method: deterministic   # deterministic | calibrated
+  source: manual
+  created_at: null
+  calibrated_from_summary: null
+  calibration_policy_version: null
+  reference_clean_cases: null
+  total_cases: null
+
+# ── Task mode ────────────────────────────────────────────────────────────────
+# Controls which statistics are computed and which fields are marked not_applicable.
+# Used by both summarize_dataset.py and qc_agent.py.
+#
+#   pancreas_only               — pancreas statistics only; lesion + sub-region checks skipped
+#   pancreas_lesion             — pancreas + lesion statistics; sub-region checks skipped
+#   pancreas_lesion_subregions  — full QC: pancreas + lesion + head/body/tail (default)
+#
+# Note for qc_agent.py: "auto" detects the mode from summary data at runtime.
+#   summarize_dataset.py treats "auto" as "pancreas_lesion_subregions" (backward compat).
+TASK_MODE: "pancreas_lesion_subregions"
+
+# ── Spatial / annotation quality ─────────────────────────────────────────────
+MIN_LESION_PANCREAS_OVERLAP: 0.80   # fraction of lesion volume inside pancreas mask
+MAX_REGION_RELATIVE_ERROR: 0.45    # CRITICAL above this; WARNING above this/3 -> 0.25
+
+# ── Volume bounds ─────────────────────────────────────────────────────────────
+MIN_LESION_VOLUME_MM3: 10
+MAX_LESION_VOLUME_MM3: 200000
+MAX_LESION_PANCREAS_RATIO: 0.80    # lesion / pancreas volume ratio
+MIN_PANCREAS_VOLUME_MM3: 20000
+MAX_PANCREAS_VOLUME_MM3: 200000
+
+# ── QC score decision gates ───────────────────────────────────────────────────
+MAX_QC_SCORE_FOR_KEEP: 35          # score <= this → keep
+MAX_QC_SCORE_FOR_REVIEW: 65        # score in (35, 65] -> review; above -> exclude
+
+# ── Hybrid scoring parameters ─────────────────────────────────────────────────
+# Used when qc_agent.py is called with --score-version hybrid.
+# formula: geometry + overlap * (1 + HYBRID_ALPHA * secondary_weighted_sum / 100)
+# Secondary issues amplify a bad overlap but cannot condemn a good-overlap case.
+HYBRID_ALPHA: 0.4
+
+# beta: fallback coefficient applied to raw secondary weighted sum when
+# P_overlap == 0 (negative cases or perfect localization).  At 1.5, a case
+# with a single CRITICAL structural flag (S_raw ≈ 21) scores ≈ 32 → review.
+HYBRID_BETA: 1.5
+
+# Per-component weights for secondary_weighted_sum (higher = more influence).
+# Set to 0.0 to exclude a component entirely from the amplifier.
+HYBRID_WEIGHT_LESION_BURDEN: 1.0
+HYBRID_WEIGHT_PANCREAS_CONTEXT: 0.8
+HYBRID_WEIGHT_REGION_CONSISTENCY: 0.6
+HYBRID_WEIGHT_METADATA: 0.3
+HYBRID_WEIGHT_ATTENUATION_CONSISTENCY: 0.4
+
+# ── Per-mode score component weights ─────────────────────────────────────────
+# Controls which score components are active and how much they contribute to
+# the secondary weighted sum, depending on which anatomy is being evaluated.
+# A weight of 0.0 disables the component entirely (value zeroed before scoring).
+#
+# Components:
+#   lesion_localization    — lesion-pancreas overlap penalty (no lesion → 0)
+#   lesion_burden          — lesion size / ratio anomalies  (no lesion → 0)
+#   pancreas_context       — pancreas size anomalies        (always active)
+#   fov_integrity          — border touching / truncation / missing regions
+#   region_consistency     — head/body/tail decomposition consistency
+#   geometry_integrity     — shape / spacing integrity      (always active)
+#   metadata_completeness  — missing metadata fields        (always active)
+#   attenuation_integrity  — suspicious HU distribution     (always active)
+SCORE_WEIGHTS:
+  pancreas_only:
+    lesion_localization:   0.0   # no lesion evaluated → disabled
+    lesion_burden:         0.0   # no lesion evaluated → disabled
+    fov_integrity:         1.0   # pancreas FOV / truncation can be evaluated
+    region_consistency:    0.0   # no subregions → disabled
+    geometry_integrity:    1.0
+    pancreas_context:      1.0
+    metadata_completeness: 0.5
+    attenuation_integrity: 0.5
+
+  pancreas_lesion:
+    lesion_localization:   1.5   # lesion present → primary signal
+    lesion_burden:         1.0
+    fov_integrity:         1.0   # pancreas FOV / truncation can be evaluated
+    region_consistency:    0.0   # no subregions → disabled
+    geometry_integrity:    1.0
+    pancreas_context:      0.8
+    metadata_completeness: 0.5
+    attenuation_integrity: 0.4
+
+  pancreas_lesion_subregions:
+    lesion_localization:   1.5
+    lesion_burden:         0.8
+    fov_integrity:         1.0
+    region_consistency:    1.2   # subregions active → enabled for all cases
+    geometry_integrity:    1.0
+    pancreas_context:      0.6
+    metadata_completeness: 0.5
+    attenuation_integrity: 0.4
+
+# ── Risk score ceiling ────────────────────────────────────────────────────────
+# Prevents a very low (clean) qc_score from being overridden to a high risk
+# level by the recommendation-alignment rule.
+# If qc_score ≤ ceiling value, risk is capped at the corresponding level
+# regardless of domain verdicts or individual risk sub-scores.
+#
+#   score ≤ low    → risk capped at "low"    (minor metadata/border issues)
+#   score ≤ medium → risk capped at "medium" (notable but not severe)
+#   above medium   → no cap, risk follows recommendation normally
+RISK_SCORE_CEILING:
+  low:    10   # qc_score ≤ 10 → risk stays "low"   even if recommendation=review
+  medium: 30   # qc_score ≤ 30 → risk stays "medium" even if recommendation=exclude
+
+# ── Domain policy overrides ──────────────────────────────────────────────────
+# Metadata is useful for stratification but is not a segmentation-label defect.
+METADATA_POLICY:
+  max_severity: low_warning
+  recommendation: keep_with_metadata_warning
+  excluded_from_risk_escalation: true
+
+# FOV subcheck severities. Domain thresholds below still control score-derived
+# severity, but subchecks use these labels for interpretability.
+FOV_POLICY:
+  border_touching_severity: low_warning
+  missing_region_severity: moderate_warning
+  incomplete_coverage_severity: moderate_warning
+  truncation_severity: high_warning
+
+FOV_SCORE_POINTS:
+  border_touching: 1
+  partial_visibility_likely: 2
+  anatomical_truncation_suspected: 8
+
+REGION_SCORE_POINTS:
+  incomplete_anatomical_coverage: 6
+  subregions_expected_but_missing: 10
+  missing_subregion: 4
+
+# ── Optional dataset calibration policy ──────────────────────────────────────
+# Used by scripts/calibrate_thresholds.py. Hard clinical/technical rules remain
+# deterministic even when calibrated thresholds are generated.
+CALIBRATION_POLICY:
+  enabled: false
+  version: v1
+  mode: balanced
+  reference_clean:
+    allow_metadata_warnings: true
+    exclude_omitted: true
+    exclude_geometry_failures: true
+    exclude_empty_pancreas: true
+    exclude_zero_overlap_lesions: true
+    min_lesion_overlap_for_reference: 0.80
+    max_structural_severity_for_reference: low_warning
+  minimums:
+    min_reference_cases: 100
+    min_reference_fraction: 0.15
+    min_stratum_cases: 50
+  fov_integrity:
+    calibrate: true
+    calibrate_score_thresholds: true
+    calibrate_score_points: false
+    percentiles:
+      low_warning: 75
+      moderate_warning: 90
+      high_warning: 97
+      critical: 99
+    guardrails:
+      low_warning: [1, 3]
+      moderate_warning: [4, 8]
+      high_warning: [8, 12]
+      critical: [12, 15]
+  pancreas_context:
+    calibrate: true
+    calibrate_score_thresholds: true
+    percentiles:
+      low_warning: 50
+      moderate_warning: 75
+      high_warning: 90
+      critical: 99
+    guardrails:
+      low_warning: [1, 5]
+      moderate_warning: [8, 12]
+      high_warning: [15, 19]
+      critical: [20, 20]
+  lesion_burden:
+    calibrate: true
+    calibrate_score_thresholds: true
+    percentiles:
+      low_warning: 50
+      moderate_warning: 75
+      high_warning: 90
+      critical: 99
+    guardrails:
+      low_warning: [1, 5]
+      moderate_warning: [8, 12]
+      high_warning: [15, 19]
+      critical: [20, 20]
+  lesion_localization:
+    calibrate: false
+    reason: absolute anatomical rule; do not normalize bad overlap
+  metadata_completeness:
+    calibrate: false
+    max_severity: low_warning
+
+# ── v5 QC Profile severity thresholds (5-level) ───────────────────────────────
+# Controls when domain score transitions to the next severity level.
+# Used by _build_qc_profile() and _recommend_from_profile().
+#
+# Severity levels (ordered):
+#   normal           — no issues
+#   low_warning      — minor informational concern
+#   moderate_warning — notable; triggers "review" recommendation
+#   high_warning     — significant; priority review
+#   critical         — must exclude (geometry_integrity/lesion_localization)
+#                      or review (other domains)
+#
+# Note: CRITICAL flags always override to "critical" regardless of score.
+QC_PROFILE_THRESHOLDS:
+  geometry_integrity:
+    low_warning:      1
+    moderate_warning: 20
+    high_warning:     35
+    critical:         40
+  lesion_localization:
+    low_warning:      1
+    moderate_warning: 15
+    high_warning:     35
+    critical:         40
+  lesion_burden:
+    low_warning:      1
+    moderate_warning:  8
+    high_warning:     15
+    critical:         20
+  pancreas_context:
+    low_warning:      1
+    moderate_warning:  8
+    high_warning:     15
+    critical:         20
+  fov_integrity:
+    low_warning:      1
+    moderate_warning:  4
+    high_warning:     8
+    critical:         12
+  region_consistency:
+    low_warning:      1
+    moderate_warning:  5
+    high_warning:     10
+    critical:         15
+  attenuation_integrity:
+    low_warning:      1
+    moderate_warning:  5
+    high_warning:     10
+    critical:         15
+  metadata_completeness:
+    low_warning:      1
+    moderate_warning:  4
+    high_warning:      8
+    critical:         10

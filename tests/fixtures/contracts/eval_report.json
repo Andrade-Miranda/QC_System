@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "artifact_type": "eval_report",
+    "artifact_schema_version": "1.0",
+    "generator": "EvaluationAgent",
+    "generator_version": "1.0.0",
+    "created_at": "2026-07-22T12:00:00Z",
+    "run_id": "run-contract-001",
+    "artifact_id": "eval-artifact-id",
+    "dataset_name": "contract_dataset",
+    "task_mode": "pancreas_only",
+    "input_resources": [],
+    "input_artifacts": [],
+    "configuration": {}
+  },
+  "data": {
+    "dataset_statistics": {
+      "n_cases": 1,
+      "decision_counts": {"warning": 1},
+      "decision_basis_counts": {"Allowed partial FOV": 1},
+      "human_review_required": 0,
+      "hard_failures": 0
+    },
+    "calibration_impact": {"n_changed": 0},
+    "review_routing": {"n_routed": 0, "n_not_routed": 1},
+    "artifact_consistency": {"final_cases": 1, "routed_cases": 0},
+    "missing_artifact_warnings": [],
+    "artifact_integrity": {"status": "available", "schema_valid_rate": 1.0},
+    "evidence_stability": {"status": "available", "agreement_rate": 1.0},
+    "reasoning_validity": {"status": "available", "artifact_presence_rate": 1.0},
+    "critique_validity": {"status": "available", "critical_count": 0},
+    "routing_behavior": {"status": "available", "routed_count": 0},
+    "policy_safety": {"status": "available", "policy_consistency_rate": 1.0},
+    "task_consistency": {"status": "available", "profile_id": "pancreas_segmentation_visible"},
+    "human_review_validation": {"status": "unavailable", "warnings": ["No reviewer labels."]},
+    "golden_case_validation": {"status": "unavailable", "warnings": ["No golden-case labels."]},
+    "external_validation_limitations": {
+      "status": "not_externally_validated",
+      "limitations": ["Internal audit does not establish medical correctness."]
+    }
+  }
+}

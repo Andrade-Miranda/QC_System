@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "medical_critique.schema.json",
+  "title": "Non-binding medical critique artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {"$ref": "#/$defs/nonAuthorityValue"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "medical_critique"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "nonAuthorityValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^(?!(?:.*_)?(?:decision(?:s)?|route(?:s)?|routing|action(?:s)?|block(?:s|er|ers|ing)?)(?:_|$)).+$"
+          },
+          "additionalProperties": {"$ref": "#/$defs/nonAuthorityValue"}
+        },
+        {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonAuthorityValue"}
+        },
+        {"type": ["string", "number", "boolean", "null"]}
+      ]
+    },
+    "evidenceReference": {
+      "allOf": [
+        {"$ref": "common_artifact_envelope.schema.json#/$defs/artifactReference"},
+        {
+          "type": "object",
+          "required": ["case_pointer"],
+          "properties": {
+            "case_pointer": {"type": ["string", "null"]}
+          }
+        }
+      ]
+    },
+    "claimCheck": {
+      "type": "object",
+      "required": ["claim", "reasoning_value", "evidence_value", "evidence_reference", "status"],
+      "properties": {
+        "claim": {"type": "string"},
+        "reasoning_value": {"type": ["string", "number", "boolean", "null"]},
+        "evidence_value": {"type": ["string", "number", "boolean", "null"]},
+        "evidence_reference": {"$ref": "#/$defs/evidenceReference"},
+        "status": {"type": "string", "enum": ["supported", "unsupported"]}
+      },
+      "additionalProperties": false
+    },
+    "concern": {
+      "type": "object",
+      "required": ["code", "severity", "description", "evidence_references"],
+      "properties": {
+        "code": {"type": "string"},
+        "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+        "description": {"type": "string"},
+        "evidence_references": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidenceReference"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidenceGap": {
+      "type": "object",
+      "required": ["code", "description"],
+      "properties": {
+        "code": {"type": "string"},
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "caseCritique": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "status",
+        "audit_scope",
+        "supported_claim_checks",
+        "unsupported_claim_checks",
+        "concerns",
+        "evidence_gaps",
+        "severity",
+        "limitations",
+        "binding"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "enum": ["complete", "audit_limited"]},
+        "audit_scope": {"const": "grounding_and_internal_consistency_only"},
+        "supported_claim_checks": {"type": "array", "items": {"$ref": "#/$defs/claimCheck"}},
+        "unsupported_claim_checks": {"type": "array", "items": {"$ref": "#/$defs/claimCheck"}},
+        "concerns": {"type": "array", "items": {"$ref": "#/$defs/concern"}},
+        "evidence_gaps": {"type": "array", "items": {"$ref": "#/$defs/evidenceGap"}},
+        "severity": {"type": "string", "enum": ["none", "low", "medium", "high", "critical"]},
+        "limitations": {"type": "array", "items": {"type": "string"}},
+        "binding": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "required": ["status", "backend", "audit_scope", "alignment", "cases", "limitations", "binding"],
+      "properties": {
+        "status": {"type": "string", "enum": ["complete", "partial", "insufficient_evidence"]},
+        "backend": {
+          "type": "object",
+          "required": ["name", "frozen"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "frozen": {"const": true}
+          },
+          "additionalProperties": false
+        },
+        "audit_scope": {"const": "grounding_and_internal_consistency_only"},
+        "alignment": {
+          "type": "object",
+          "required": ["issues", "case_counts"],
+          "properties": {
+            "issues": {"type": "array", "items": {"type": "string"}},
+            "case_counts": {
+              "type": "object",
+              "required": ["reasoning", "deterministic", "calibrated", "comparison", "output"],
+              "properties": {
+                "reasoning": {"type": "integer", "minimum": 0},
+                "deterministic": {"type": "integer", "minimum": 0},
+                "calibrated": {"type": "integer", "minimum": 0},
+                "comparison": {"type": "integer", "minimum": 0},
+                "output": {"type": "integer", "minimum": 0}
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "cases": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/caseCritique"}
+        },
+        "limitations": {"type": "array", "items": {"type": "string"}},
+        "binding": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  }
+}

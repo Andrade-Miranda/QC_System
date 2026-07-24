@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "artifact_type": "reasoning_artifact",
+    "artifact_schema_version": "1.0",
+    "generator": "ReasoningAgent",
+    "generator_version": "1.0.0",
+    "created_at": "2026-07-22T12:00:00Z",
+    "run_id": "run-contract-001",
+    "artifact_id": "reasoning-artifact-id",
+    "dataset_name": "contract_dataset",
+    "task_mode": "pancreas_only",
+    "input_resources": [],
+    "input_artifacts": [],
+    "configuration": {}
+  },
+  "data": {
+    "status": "complete",
+    "backend": {"name": "deterministic_template", "frozen": true},
+    "alignment": {
+      "context_validation_status": "valid_with_warnings",
+      "issues": [],
+      "case_counts": {
+        "context": 1,
+        "deterministic": 1,
+        "calibrated": 1,
+        "comparison": 1,
+        "output": 1
+      }
+    },
+    "cases": {
+      "case_001": {
+        "case_id": "case_001",
+        "status": "complete",
+        "task_profile_reference": {
+          "artifact_type": "validated_run_context",
+          "path": "validated_run_context.json",
+          "task_mode": "pancreas_only"
+        },
+        "evidence_references": {
+          "deterministic": {
+            "artifact_type": "qc_report_deterministic",
+            "path": "qc_report_deterministic.json",
+            "case_pointer": "/data/cases/case_001"
+          },
+          "calibrated": {
+            "artifact_type": "qc_report_calibrated",
+            "path": "qc_report_calibrated.json",
+            "case_pointer": "/data/cases/case_001"
+          },
+          "comparison": {
+            "artifact_type": "qc_comparison",
+            "path": "qc_comparison.json",
+            "case_pointer": "/data/all_cases/0"
+          }
+        },
+        "evidence_summary": {
+          "deterministic": {
+            "availability": "available",
+            "reported_recommendation": "keep",
+            "risk_level": "low",
+            "score": 0,
+            "primary_domain": null,
+            "abnormal_domains": []
+          },
+          "calibrated": {
+            "availability": "available",
+            "reported_recommendation": "keep",
+            "risk_level": "low",
+            "score": 0,
+            "primary_domain": null,
+            "abnormal_domains": []
+          },
+          "comparison": {
+            "availability": "available",
+            "changed": false,
+            "recommendation_change": "unchanged",
+            "risk_change": "unchanged",
+            "score_delta": 0,
+            "domain_deterministic": null,
+            "domain_calibrated": null
+          }
+        },
+        "conflicts": [],
+        "uncertainty_annotations": [],
+        "limitations": ["No inference about anatomy outside the acquired FOV."]
+      }
+    },
+    "limitations": ["This artifact is explanatory and has no policy authority."]
+  }
+}

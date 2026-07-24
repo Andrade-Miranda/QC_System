@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "target_presence_evidence.schema.json",
+  "title": "Target-presence evidence artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "target_presence_evidence"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "targetEvidence": {
+      "type": "object",
+      "required": [
+        "target",
+        "expected_presence",
+        "observed_presence",
+        "used_for_training",
+        "used_for_validation",
+        "evidence_sources",
+        "confidence",
+        "interpretation",
+        "task_implications"
+      ],
+      "properties": {
+        "target": {"type": "string", "minLength": 1},
+        "expected_presence": {"type": "string", "enum": ["required", "optional", "unknown"]},
+        "observed_presence": {"type": "string", "enum": ["present", "absent", "partial", "uncertain"]},
+        "used_for_training": {"type": "boolean"},
+        "used_for_validation": {"type": "boolean"},
+        "evidence_sources": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "interpretation": {"type": "string", "minLength": 1},
+        "task_implications": {"type": "array", "items": {"type": "string"}},
+        "visible_target_annotated": {"type": ["boolean", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "caseEvidence": {
+      "type": "object",
+      "required": ["case_id", "targets"],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "targets": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/targetEvidence"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "type": "object",
+      "required": ["task_profile", "cases"],
+      "properties": {
+        "task_profile": {"$ref": "common_artifact_envelope.schema.json#/$defs/taskProfileReference"},
+        "cases": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/caseEvidence"}
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

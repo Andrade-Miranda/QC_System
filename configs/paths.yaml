@@ -1,0 +1,40 @@
+# =============================================================================
+#  QC System — Centralized Path Configuration
+#  All scripts load paths from here. Never hardcode paths in scripts.
+#
+#  To analyse a different dataset, point DATASET_CONFIG at the matching file
+#  under datasets/dataset_configs/. That file overrides RAW_DATASET_ROOT and
+#  all other dataset-specific keys below.
+# =============================================================================
+
+# ── Active dataset config (relative to PROJECT_ROOT) ─────────────────────────
+# Change this single line to switch datasets.
+# Leave empty to use the keys below directly (legacy / manual mode).
+DATASET_CONFIG: "datasets/dataset_configs/PantsMini.yaml"
+
+# Subdirectories inside RAW_DATASET_ROOT (relative to RAW_DATASET_ROOT)
+RAW_IMAGES_SUBDIR:   "imagesTr"
+RAW_LABELS_SUBDIR:   "labelsTr"
+RAW_METADATA_FILE:   "metadata.xlsx"
+IMAGE_SUFFIX:        "_0000.nii.gz"
+
+# ── Project root (QC framework root — code lives here) ───────────────────────
+PROJECT_ROOT: "/home/gandrade-miranda/Documents/Code/Git_workspace/nnUNet/QC_System"
+
+# ── Output root (relative to PROJECT_ROOT) ───────────────────────────────────
+# All dataset outputs are placed under:  <OUTPUT_ROOT>/<dataset_name>/<subdir>
+# e.g. outputs/PantsMini/pancreas_only/runs/RUN_ID/final_qc_decisions.json
+OUTPUT_ROOT: "outputs"
+
+# Output subdirectory names (relative to outputs/<dataset_name>/)
+OUTPUT_QC_SUBDIR:        "qc"
+OUTPUT_SUMMARY_SUBDIR:   "summaries"
+LOGS_DIR:                "logs"      # relative to PROJECT_ROOT (shared)
+
+# Summary JSON filename (written inside <OUTPUT_SUMMARY_SUBDIR>/)
+# Leave empty to auto-generate as "<dataset_name>_summary.json"
+SUMMARY_JSON_FILENAME: ""
+
+# ── Config file paths (relative to PROJECT_ROOT) ─────────────────────────────
+THRESHOLDS_CONFIG:             "configs/thresholds.yaml"
+DEFAULT_THRESHOLD_METHOD:      "deterministic"   # deterministic | calibrated

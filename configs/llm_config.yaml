@@ -1,0 +1,30 @@
+# =============================================================================
+#  PantsMini QC System — LLM / Dynamic Agent Configuration
+# =============================================================================
+
+# LLM provider selected for the interactive review agent. Availability is
+# checked only when deterministic intent parsing fails. It can classify intent
+# but never receives artifacts or rewrites displayed results.
+provider: "ollama"
+
+interactive_review_agent:
+  provider: "ollama"
+  timeout_seconds: 20
+  max_tokens: 512
+  max_displayed_cases: 50
+
+# OpenAI settings (used when provider == "openai")
+openai:
+  model: "gpt-4o"
+  base_url: "https://api.openai.com/v1/chat/completions"
+  api_key_env: "OPENAI_API_KEY"   # name of env var that holds the key
+
+# Ollama settings (used when provider == "ollama")
+ollama:
+  base_url: "http://localhost:11434"
+  model: "llama3"
+
+# Logging of agent interactions
+log_interactions: true
+interaction_log_filename: "interactive_review_interactions.jsonl"
+log_query_text: false

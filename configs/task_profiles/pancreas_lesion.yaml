@@ -1,0 +1,31 @@
+TASK_MODE: pancreas_lesion
+
+REQUIRED_COMPONENTS:
+  image: true
+  pancreas_mask: true
+  lesion_mask: true
+  subregion_masks: false
+  metadata: optional
+
+REQUIRED_SEGMENTATIONS:
+  pancreas_mask: "pancreas.nii.gz"
+  lesion_mask: "pancreatic_lesion.nii.gz"
+
+ACTIVE_QC_DOMAINS:
+  geometry_integrity: true
+  lesion_localization: true
+  lesion_burden: true
+  pancreas_context: true
+  fov_integrity: true
+  region_consistency: false
+  attenuation_integrity: true
+  metadata_completeness: true
+
+HARD_FAILURE_DOMAINS:
+  - geometry_integrity
+  - lesion_localization
+
+CALIBRATABLE_DOMAINS:
+  - fov_integrity
+  - pancreas_context
+  - lesion_burden

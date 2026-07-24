@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "reasoning_artifact.schema.json",
+  "title": "Non-binding structured reasoning artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {"$ref": "#/$defs/nonAuthorityValue"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "reasoning_artifact"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "nonAuthorityValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^(?!(?:.*_)?(?:decision(?:s)?|route(?:s)?|routing|action(?:s)?|block(?:s|er|ers|ing)?)(?:_|$)).+$"
+          },
+          "additionalProperties": {"$ref": "#/$defs/nonAuthorityValue"}
+        },
+        {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonAuthorityValue"}
+        },
+        {"type": ["string", "number", "boolean", "null"]}
+      ]
+    },
+    "evidenceReference": {
+      "allOf": [
+        {"$ref": "common_artifact_envelope.schema.json#/$defs/artifactReference"},
+        {
+          "type": "object",
+          "required": ["case_pointer"],
+          "properties": {
+            "case_pointer": {"type": ["string", "null"]}
+          }
+        }
+      ]
+    },
+    "qcSnapshot": {
+      "type": "object",
+      "required": ["availability"],
+      "properties": {
+        "availability": {"type": "string", "enum": ["available", "missing"]},
+        "reported_recommendation": {"type": ["string", "null"]},
+        "risk_level": {"type": ["string", "null"]},
+        "score": {"type": ["number", "null"]},
+        "primary_domain": {"type": ["string", "null"]},
+        "abnormal_domains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["domain", "severity", "component_score"],
+            "properties": {
+              "domain": {"type": "string"},
+              "severity": {"type": "string"},
+              "component_score": {"type": ["number", "null"]}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "comparisonSnapshot": {
+      "type": "object",
+      "required": ["availability"],
+      "properties": {
+        "availability": {"type": "string", "enum": ["available", "missing"]},
+        "changed": {"type": "boolean"},
+        "recommendation_change": {"type": ["string", "null"]},
+        "risk_change": {"type": ["string", "null"]},
+        "score_delta": {"type": ["number", "null"]},
+        "domain_deterministic": {"type": ["string", "null"]},
+        "domain_calibrated": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["field", "deterministic_value", "calibrated_value", "description", "evidence_references"],
+      "properties": {
+        "field": {"type": "string"},
+        "deterministic_value": {},
+        "calibrated_value": {},
+        "description": {"type": "string"},
+        "evidence_references": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidenceReference"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "uncertaintyAnnotation": {
+      "type": "object",
+      "required": ["code", "severity", "description", "evidence_references"],
+      "properties": {
+        "code": {"type": "string"},
+        "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+        "description": {"type": "string"},
+        "evidence_references": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/evidenceReference"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "caseReasoning": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "status",
+        "task_profile_reference",
+        "evidence_references",
+        "evidence_summary",
+        "conflicts",
+        "uncertainty_annotations",
+        "limitations"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "enum": ["complete", "partial", "insufficient_evidence"]},
+        "task_profile_reference": {"$ref": "common_artifact_envelope.schema.json#/$defs/artifactReference"},
+        "evidence_references": {
+          "type": "object",
+          "required": ["deterministic", "calibrated", "comparison"],
+          "properties": {
+            "deterministic": {"$ref": "#/$defs/evidenceReference"},
+            "calibrated": {"$ref": "#/$defs/evidenceReference"},
+            "comparison": {"$ref": "#/$defs/evidenceReference"}
+          },
+          "additionalProperties": false
+        },
+        "evidence_summary": {
+          "type": "object",
+          "required": ["deterministic", "calibrated", "comparison"],
+          "properties": {
+            "deterministic": {"$ref": "#/$defs/qcSnapshot"},
+            "calibrated": {"$ref": "#/$defs/qcSnapshot"},
+            "comparison": {"$ref": "#/$defs/comparisonSnapshot"}
+          },
+          "additionalProperties": false
+        },
+        "conflicts": {"type": "array", "items": {"$ref": "#/$defs/conflict"}},
+        "uncertainty_annotations": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/uncertaintyAnnotation"}
+        },
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "required": ["status", "backend", "alignment", "cases", "limitations"],
+      "properties": {
+        "status": {"type": "string", "enum": ["complete", "partial", "insufficient_evidence"]},
+        "backend": {
+          "type": "object",
+          "required": ["name", "frozen"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "frozen": {"const": true}
+          },
+          "additionalProperties": false
+        },
+        "alignment": {
+          "type": "object",
+          "required": ["context_validation_status", "issues", "case_counts"],
+          "properties": {
+            "context_validation_status": {"type": "string"},
+            "issues": {"type": "array", "items": {"type": "string"}},
+            "case_counts": {
+              "type": "object",
+              "required": ["context", "deterministic", "calibrated", "comparison", "output"],
+              "properties": {
+                "context": {"type": "integer", "minimum": 0},
+                "deterministic": {"type": "integer", "minimum": 0},
+                "calibrated": {"type": "integer", "minimum": 0},
+                "comparison": {"type": "integer", "minimum": 0},
+                "output": {"type": "integer", "minimum": 0}
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "cases": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/caseReasoning"}
+        },
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  }
+}

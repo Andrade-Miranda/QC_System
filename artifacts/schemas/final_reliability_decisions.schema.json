@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "final_reliability_decisions.schema.json",
+  "title": "Final reliability decisions artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "artifact_type": {
+              "type": "string",
+              "enum": ["final_reliability_decisions", "final_qc_decisions"]
+            }
+          }
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "required": [
+        "final_decision",
+        "decision_basis",
+        "hard_failure",
+        "requires_human_review",
+        "policy_version",
+        "policy_rules_triggered"
+      ],
+      "properties": {
+        "final_decision": {"$ref": "common_artifact_envelope.schema.json#/$defs/canonicalAction"},
+        "decision_basis": {"type": "string", "minLength": 1},
+        "hard_failure": {"type": "boolean"},
+        "requires_human_review": {"type": "boolean"},
+        "deterministic_recommendation": {"type": ["string", "null"]},
+        "calibrated_recommendation": {"type": ["string", "null"]},
+        "risk_level": {"type": ["string", "null"]},
+        "primary_domain": {"type": ["string", "null"]},
+        "policy_version": {"type": "string", "minLength": 1},
+        "policy_rules_triggered": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "reasoning_artifact_reference": {"$ref": "common_artifact_envelope.schema.json#/$defs/artifactReference"},
+        "medical_critique_reference": {"$ref": "common_artifact_envelope.schema.json#/$defs/artifactReference"},
+        "per_target_decisions": {"type": "object"},
+        "aggregation_rule": {"type": ["string", "null"]},
+        "blocking_target": {"type": ["string", "null"]},
+        "blocking_evidence": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "type": "object",
+      "required": ["summary", "decisions"],
+      "properties": {
+        "summary": {
+          "type": "object",
+          "required": ["n_cases", "decision_counts"],
+          "properties": {
+            "n_cases": {"type": "integer", "minimum": 0},
+            "decision_counts": {
+              "type": "object",
+              "additionalProperties": {"type": "integer", "minimum": 0}
+            }
+          },
+          "additionalProperties": true
+        },
+        "decisions": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/decision"}
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

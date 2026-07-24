@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "artifact_type": "target_presence_evidence",
+    "artifact_schema_version": "1.0",
+    "generator": "EvidenceAgent",
+    "generator_version": "1.0.0",
+    "created_at": "2026-07-22T12:00:00Z",
+    "run_id": "run-contract-001",
+    "artifact_id": "presence-artifact-id",
+    "dataset_name": "contract_dataset",
+    "task_mode": "pancreas_only",
+    "input_resources": [],
+    "input_artifacts": [],
+    "configuration": {}
+  },
+  "data": {
+    "task_profile": {"id": "pancreas_segmentation_visible", "version": "1.0.0"},
+    "cases": {
+      "case_001": {
+        "case_id": "case_001",
+        "targets": {
+          "pancreas": {
+            "target": "pancreas",
+            "expected_presence": "required",
+            "observed_presence": "partial",
+            "used_for_training": true,
+            "used_for_validation": true,
+            "evidence_sources": ["pancreas_mask", "fov_evidence"],
+            "confidence": 0.95,
+            "interpretation": "Pancreas is partially covered by the acquisition.",
+            "task_implications": ["Usable if all visible pancreas is annotated."],
+            "visible_target_annotated": true
+          }
+        }
+      }
+    }
+  }
+}

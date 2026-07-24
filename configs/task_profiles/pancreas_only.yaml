@@ -1,0 +1,96 @@
+TASK_MODE: pancreas_only
+
+REQUIRED_COMPONENTS:
+  image: true
+  pancreas_mask: true
+  lesion_mask: false
+  subregion_masks: false
+  metadata: optional
+
+REQUIRED_SEGMENTATIONS:
+  pancreas_mask: "pancreas.nii.gz"
+
+ACTIVE_QC_DOMAINS:
+  geometry_integrity: true
+  lesion_localization: false
+  lesion_burden: false
+  pancreas_context: true
+  fov_integrity: true
+  region_consistency: false
+  attenuation_integrity: true
+  metadata_completeness: true
+
+HARD_FAILURE_DOMAINS:
+  - geometry_integrity
+
+CALIBRATABLE_DOMAINS:
+  - fov_integrity
+  - pancreas_context
+
+# Additive V1 contract. Uppercase fields above remain the executable legacy profile.
+task_profile:
+  id: pancreas_segmentation_visible
+  name: Visible Pancreas Segmentation
+  version: "1.0.0"
+  modality: CT
+  anatomy: pancreas
+  task_type: semantic_segmentation
+  training_target: visible_pancreas
+  description: Segment all pancreas tissue visible within the acquired CT field of view.
+
+  targets:
+    pancreas:
+      role: primary_target
+      expected_presence: required
+      valid_observed_presence: [present, partial]
+      used_for_training: true
+      used_for_validation: true
+      allow_negative_cases: false
+      negative_case_requires_confirmation: false
+      mask_required_when_present: true
+      empty_mask_policy: reject
+      require_complete_target: false
+      partial_fov_policy: allow_if_visible_target_annotated
+
+  required_evidence:
+    geometry:
+      - image_mask_shape_match
+      - affine_compatible
+      - mask_inside_image_bounds
+    fov:
+      - target_visibility_assessed
+      - truncation_assessed
+    target_presence:
+      - expected_presence_recorded
+      - observed_presence_assessed
+      - visible_target_annotation_assessed
+
+  partial_fov:
+    policy: allow_if_visible_target_annotated
+    required_conditions:
+      - geometry_valid
+      - fov_assessed
+      - visible_pancreas_annotated
+    action_when_allowed: warning
+    action_when_conditions_unmet: reject
+
+  target_presence_artifact:
+    required: true
+    fields:
+      - case_id
+      - target
+      - expected_presence
+      - observed_presence
+      - evidence_sources
+      - confidence
+      - interpretation
+      - task_implications
+
+  decision:
+    policy: visible_pancreas_v1
+    per_target_decisions: false
+    outcomes: [keep, warning, review, reject, insufficient_evidence]
+    aggregation:
+      keep_if_all_required_targets_valid: true
+      reject_if_any_required_target_rejected: true
+      review_if_any_required_target_uncertain: true

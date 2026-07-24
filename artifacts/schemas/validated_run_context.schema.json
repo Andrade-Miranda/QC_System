@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "validated_run_context.schema.json",
+  "title": "Validated run context artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "validated_run_context"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "data": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "task_profile",
+        "dataset_resources",
+        "path_configuration",
+        "threshold_configuration",
+        "validation_status",
+        "warnings"
+      ],
+      "properties": {
+        "run_id": {"type": "string", "minLength": 1},
+        "task_profile": {
+          "$ref": "common_artifact_envelope.schema.json#/$defs/taskProfileReference"
+        },
+        "dataset_resources": {
+          "type": "array",
+          "items": {"$ref": "common_artifact_envelope.schema.json#/$defs/resourceReference"}
+        },
+        "path_configuration": {"type": "object"},
+        "threshold_configuration": {"type": "object"},
+        "validation_status": {"type": "string", "enum": ["valid", "valid_with_warnings", "invalid"]},
+        "warnings": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    }
+  }
+}

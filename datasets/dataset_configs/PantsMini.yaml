@@ -1,0 +1,36 @@
+# =============================================================================
+#  Dataset config — PantsMini
+#
+#  These values override the matching keys in configs/paths.yaml.
+#  To run the QC pipeline on PantsMini, point paths.yaml to this file:
+#
+#      DATASET_CONFIG: "datasets/dataset_configs/PantsMini.yaml"
+# =============================================================================
+
+# ── Identity ──────────────────────────────────────────────────────────────────
+DATASET_NAME: "PantsMini"          # used to namespace outputs/; overrides auto-inference
+
+# ── Raw dataset location ──────────────────────────────────────────────────────
+RAW_DATASET_ROOT: "/home/gandrade-miranda/Documents/Code/Git_workspace/nnUNet/data/PantsMini"
+
+# Subdirectories inside RAW_DATASET_ROOT
+RAW_IMAGES_SUBDIR:  "imagesTr"
+RAW_LABELS_SUBDIR:  "labelsTr"
+RAW_METADATA_FILE:  "metadata.xlsx"
+IMAGE_SUFFIX:       "_0000.nii.gz"
+
+# ── Descriptive dataset metadata ──────────────────────────────────────────────
+# Retained for dataset consumers; these fields do not drive active QC decisions.
+MODALITY: "CT"
+
+# ── Label map ─────────────────────────────────────────────────────────────────
+LABELS:
+  background: 0
+  pancreas:   1
+  lesion:     2
+
+# ── Dataset description ───────────────────────────────────────────────────────
+DESCRIPTION: "Pancreas lesion segmentation dataset"
+REFERENCE:   "PantsMini"
+LICENCE:     "see original dataset"
+RELEASE:     "1.0"

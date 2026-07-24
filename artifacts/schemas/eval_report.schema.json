@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eval_report.schema.json",
+  "title": "AgentQC evaluation report artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "eval_report"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "auditSection": {
+      "type": "object",
+      "properties": {
+        "status": {"type": "string", "enum": ["available", "partial", "unavailable"]},
+        "warnings": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "type": "object",
+      "required": ["dataset_statistics", "calibration_impact", "review_routing", "artifact_consistency"],
+      "properties": {
+        "dataset_statistics": {
+          "type": "object",
+          "required": ["n_cases", "decision_counts", "decision_basis_counts", "human_review_required", "hard_failures"],
+          "properties": {
+            "n_cases": {"type": "integer", "minimum": 0},
+            "decision_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+            "decision_basis_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+            "human_review_required": {"type": "integer", "minimum": 0},
+            "hard_failures": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": true
+        },
+        "calibration_impact": {"type": "object"},
+        "review_routing": {"type": "object"},
+        "artifact_consistency": {"type": "object"},
+        "missing_artifact_warnings": {"type": "array", "items": {"type": "string"}},
+        "artifact_integrity": {"$ref": "#/$defs/auditSection"},
+        "evidence_stability": {"$ref": "#/$defs/auditSection"},
+        "reasoning_validity": {"$ref": "#/$defs/auditSection"},
+        "critique_validity": {"$ref": "#/$defs/auditSection"},
+        "routing_behavior": {"$ref": "#/$defs/auditSection"},
+        "policy_safety": {"$ref": "#/$defs/auditSection"},
+        "task_consistency": {"$ref": "#/$defs/auditSection"},
+        "human_review_validation": {"$ref": "#/$defs/auditSection"},
+        "golden_case_validation": {"$ref": "#/$defs/auditSection"},
+        "external_validation_limitations": {
+          "type": "object",
+          "required": ["status", "limitations"],
+          "properties": {
+            "status": {"const": "not_externally_validated"},
+            "limitations": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

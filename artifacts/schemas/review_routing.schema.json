@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review_routing.schema.json",
+  "title": "Review-routing artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "review_routing"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "route": {
+      "type": "object",
+      "required": ["case_id", "route_to_review", "route_reasons", "hard_failure"],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "route_to_review": {"type": "boolean"},
+        "route_reasons": {"type": "array", "items": {"type": "string"}},
+        "deterministic_recommendation": {"type": ["string", "null"]},
+        "calibrated_recommendation": {"type": ["string", "null"]},
+        "primary_domain": {"type": ["string", "null"]},
+        "hard_failure": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "type": "object",
+      "required": ["summary", "routed_cases", "not_routed_cases"],
+      "properties": {
+        "summary": {
+          "type": "object",
+          "required": ["n_routed", "n_not_routed"],
+          "properties": {
+            "n_routed": {"type": "integer", "minimum": 0},
+            "n_not_routed": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": true
+        },
+        "routed_cases": {"type": "array", "items": {"$ref": "#/$defs/route"}},
+        "not_routed_cases": {"type": "array", "items": {"$ref": "#/$defs/route"}}
+      },
+      "additionalProperties": true
+    }
+  }
+}

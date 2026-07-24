@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "golden_labels.schema.json",
+  "title": "Human golden-review labels artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "golden_labels"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "label": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "review_id",
+        "annotation_completeness",
+        "expected_action",
+        "reviewer_id",
+        "confidence",
+        "rationale"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "review_id": {"type": "string", "minLength": 1},
+        "annotation_completeness": {
+          "type": "string",
+          "enum": ["complete", "incomplete", "uncertain"]
+        },
+        "expected_action": {
+          "$ref": "common_artifact_envelope.schema.json#/$defs/canonicalAction"
+        },
+        "reviewer_id": {"type": "string", "minLength": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "rationale": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "required": ["review_provenance", "annotation_schema", "summary", "labels"],
+      "properties": {
+        "review_provenance": {
+          "type": "object",
+          "required": ["package_id", "source_run_id", "review_csv", "system_reference"],
+          "additionalProperties": true
+        },
+        "annotation_schema": {"type": "object"},
+        "summary": {
+          "type": "object",
+          "required": ["n_labels", "reviewer_counts", "expected_action_counts"],
+          "properties": {
+            "n_labels": {"type": "integer", "minimum": 0},
+            "reviewer_counts": {
+              "type": "object",
+              "additionalProperties": {"type": "integer", "minimum": 0}
+            },
+            "expected_action_counts": {
+              "type": "object",
+              "additionalProperties": {"type": "integer", "minimum": 0}
+            }
+          },
+          "additionalProperties": true
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/label"}
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

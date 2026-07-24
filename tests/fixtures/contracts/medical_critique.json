@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "artifact_type": "medical_critique",
+    "artifact_schema_version": "1.0",
+    "generator": "MedicalCriticAgent",
+    "generator_version": "1.0.0",
+    "created_at": "2026-07-22T12:00:00Z",
+    "run_id": "run-contract-001",
+    "artifact_id": "critique-artifact-id",
+    "dataset_name": "contract_dataset",
+    "task_mode": "pancreas_only",
+    "input_resources": [],
+    "input_artifacts": [],
+    "configuration": {}
+  },
+  "data": {
+    "status": "complete",
+    "backend": {"name": "deterministic_template", "frozen": true},
+    "audit_scope": "grounding_and_internal_consistency_only",
+    "alignment": {
+      "issues": [],
+      "case_counts": {
+        "reasoning": 1,
+        "deterministic": 1,
+        "calibrated": 1,
+        "comparison": 1,
+        "output": 1
+      }
+    },
+    "cases": {
+      "case_001": {
+        "case_id": "case_001",
+        "status": "complete",
+        "audit_scope": "grounding_and_internal_consistency_only",
+        "supported_claim_checks": [
+          {
+            "claim": "deterministic.score",
+            "reasoning_value": 0,
+            "evidence_value": 0,
+            "evidence_reference": {
+              "artifact_type": "qc_report_deterministic",
+              "path": "qc_report_deterministic.json",
+              "case_pointer": "/data/cases/case_001"
+            },
+            "status": "supported"
+          }
+        ],
+        "unsupported_claim_checks": [],
+        "concerns": [],
+        "evidence_gaps": [],
+        "severity": "none",
+        "limitations": ["The critic checks structured grounding only."],
+        "binding": false
+      }
+    },
+    "limitations": ["This artifact is explanatory and non-binding."],
+    "binding": false
+  }
+}

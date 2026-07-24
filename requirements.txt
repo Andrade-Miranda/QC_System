@@ -1,0 +1,7 @@
+jsonschema>=4
+numpy
+openpyxl
+pandas
+PyYAML
+scipy
+SimpleITK

@@ -1,0 +1,160 @@
+policy:
+  id: visible_pancreas_v1
+  version: "1.0.0"
+  task_profile:
+    id: pancreas_segmentation_visible
+    version: "1.0.0"
+  evaluation: first_match
+  no_match_action: insufficient_evidence
+  canonical_actions:
+    - keep
+    - warning
+    - review
+    - reject
+    - insufficient_evidence
+  precedence:
+    - VP-001
+    - VP-002
+    - VP-003
+    - VP-004
+    - VP-005
+    - VP-006
+    - VP-007
+    - VP-008
+    - VP-009
+    - VP-010
+    - VP-011
+    - VP-012
+    - VP-013
+    - VP-014
+  rules:
+    - id: VP-001
+      name: blocking_processing_failure
+      when:
+        any:
+          - {path: validation.omit_from_training, operator: equals, value: true}
+          - {path: validation.status_invalid, operator: equals, value: true}
+          - {path: deterministic.blocking_processing_error, operator: equals, value: true}
+      action: reject
+      rationale: Unreadable or unprocessable cases cannot provide valid supervision.
+
+    - id: VP-002
+      name: unreadable_image
+      when:
+        all:
+          - {path: deterministic.image_readable, operator: equals, value: false}
+      action: reject
+      rationale: A readable CT image is mandatory.
+
+    - id: VP-003
+      name: invalid_geometry
+      when:
+        any:
+          - {path: deterministic.geometry.valid, operator: equals, value: false}
+          - {path: deterministic.geometry.hard_failure, operator: equals, value: true}
+      action: reject
+      rationale: Deterministic geometry failures are hard failures.
+
+    - id: VP-004
+      name: required_target_absent
+      when:
+        all:
+          - {path: deterministic.target.expected_presence, operator: equals, value: required}
+          - {path: deterministic.target.observed_presence, operator: equals, value: absent}
+      action: reject
+      rationale: Negative pancreas cases are not valid for this task.
+
+    - id: VP-005
+      name: required_mask_missing_or_empty
+      when:
+        any:
+          - {path: deterministic.target.mask_present, operator: equals, value: false}
+          - {path: deterministic.target.mask_empty, operator: equals, value: true}
+      action: reject
+      rationale: Visible pancreas supervision requires a non-empty pancreas mask.
+
+    - id: VP-006
+      name: visible_target_annotation_incomplete
+      when:
+        all:
+          - {path: deterministic.target.visible_target_annotation_status, operator: equals, value: incomplete}
+      action: reject
+      rationale: Incomplete visible-pancreas annotation cannot provide valid supervision.
+
+    - id: VP-007
+      name: required_evidence_missing
+      when:
+        any:
+          - {path: deterministic.present, operator: equals, value: false}
+          - {path: calibrated.present, operator: equals, value: false}
+          - {path: deterministic.geometry.complete, operator: equals, value: false}
+          - {path: deterministic.fov.complete, operator: equals, value: false}
+          - {path: deterministic.target.evidence_complete, operator: equals, value: false}
+      action: insufficient_evidence
+      rationale: Geometry, FOV, and target-presence evidence are mandatory.
+
+    - id: VP-008
+      name: target_presence_uncertain
+      when:
+        all:
+          - {path: deterministic.target.observed_presence, operator: equals, value: uncertain}
+      action: insufficient_evidence
+      rationale: Required target presence cannot be inferred safely.
+
+    - id: VP-009
+      name: partial_visible_target_annotation_uncertain
+      when:
+        all:
+          - {path: deterministic.target.observed_presence, operator: equals, value: partial}
+          - {path: deterministic.target.visible_target_annotation_status, operator: equals, value: uncertain}
+      action: review
+      rationale: Partial visible-pancreas annotation completeness is uncertain and requires review.
+
+    - id: VP-010
+      name: explicit_review_route
+      when:
+        all:
+          - {path: routing.route_to_review, operator: equals, value: true}
+      action: review
+      rationale: Policy preserves explicit uncertainty escalation.
+
+    - id: VP-011
+      name: unstable_evidence
+      when:
+        any:
+          - {path: comparison.recommendation_changed, operator: equals, value: true}
+          - {path: comparison.risk_level_changed, operator: equals, value: true}
+      action: review
+      rationale: Deterministic and calibrated evidence disagreement requires review.
+
+    - id: VP-012
+      name: allowed_partial_fov
+      when:
+        all:
+          - {path: deterministic.target.observed_presence, operator: equals, value: partial}
+          - {path: deterministic.target.visible_target_annotation_status, operator: equals, value: complete}
+          - {path: deterministic.geometry.valid, operator: equals, value: true}
+          - {path: deterministic.fov.complete, operator: equals, value: true}
+      action: warning
+      rationale: Partial FOV is usable for visible-pancreas segmentation when visible tissue is fully annotated.
+
+    - id: VP-013
+      name: non_blocking_warning
+      when:
+        any:
+          - {path: deterministic.non_blocking_warning, operator: equals, value: true}
+          - {path: calibrated.non_blocking_warning, operator: equals, value: true}
+      action: warning
+      rationale: Preserve non-blocking evidence concerns in the curation action.
+
+    - id: VP-014
+      name: valid_visible_pancreas_case
+      when:
+        all:
+          - {path: deterministic.image_readable, operator: equals, value: true}
+          - {path: deterministic.geometry.valid, operator: equals, value: true}
+          - {path: deterministic.target.observed_presence, operator: equals, value: present}
+          - {path: deterministic.target.mask_valid, operator: equals, value: true}
+          - {path: deterministic.target.visible_target_annotation_status, operator: equals, value: complete}
+      action: keep
+      rationale: All required evidence supports valid visible-pancreas supervision.

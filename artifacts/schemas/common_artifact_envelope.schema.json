@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common_artifact_envelope.schema.json",
+  "title": "AgentQC common artifact envelope",
+  "type": "object",
+  "required": ["metadata", "data"],
+  "properties": {
+    "metadata": {"$ref": "#/$defs/metadata"},
+    "data": {}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "canonicalAction": {
+      "type": "string",
+      "enum": ["keep", "warning", "review", "reject", "insufficient_evidence"]
+    },
+    "artifactReference": {
+      "type": "object",
+      "required": ["artifact_type"],
+      "properties": {
+        "artifact_type": {"type": ["string", "null"]},
+        "path": {"type": "string"},
+        "exists": {"type": "boolean"},
+        "sha256": {"type": ["string", "null"]},
+        "artifact_id": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "resourceReference": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "path": {"type": "string"},
+        "exists": {"type": "boolean"},
+        "sha256": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "taskProfileReference": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "path": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "artifact_type",
+        "artifact_schema_version",
+        "generator",
+        "generator_version",
+        "created_at",
+        "run_id",
+        "dataset_name",
+        "task_mode",
+        "input_resources",
+        "input_artifacts",
+        "configuration"
+      ],
+      "properties": {
+        "artifact_type": {"type": "string", "minLength": 1},
+        "artifact_schema_version": {"type": "string", "pattern": "^1\\.0(?:\\.0)?$"},
+        "generator": {"type": "string", "minLength": 1},
+        "generator_version": {"type": "string", "minLength": 1},
+        "created_at": {"type": "string", "format": "date-time"},
+        "run_id": {"type": ["string", "null"]},
+        "artifact_id": {"type": ["string", "null"]},
+        "dataset_name": {"type": "string", "minLength": 1},
+        "task_mode": {"type": "string", "minLength": 1},
+        "input_resources": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/resourceReference"}
+        },
+        "input_artifacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/artifactReference"}
+        },
+        "configuration": {"type": "object"},
+        "software_version": {"type": "object"},
+        "determinism": {"type": "object"}
+      },
+      "additionalProperties": true
+    }
+  }
+}
