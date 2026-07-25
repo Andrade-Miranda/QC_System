@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "run_manifest.schema.json",
+  "title": "AgentQC run manifest",
+  "type": "object",
+  "required": [
+    "manifest_version",
+    "run_id",
+    "dataset_name",
+    "task_mode",
+    "run_dir",
+    "artifacts",
+    "resources",
+    "aliases",
+    "authority"
+  ],
+  "properties": {
+    "manifest_version": {"const": "1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "dataset_name": {"type": "string", "minLength": 1},
+    "task_mode": {
+      "type": "string",
+      "enum": ["pancreas_only", "pancreas_lesion", "pancreas_lesion_subregions"]
+    },
+    "run_dir": {"type": "string", "minLength": 1},
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/pathEntry"}
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/pathEntry"}
+    },
+    "aliases": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "authority": {
+      "type": "object",
+      "required": ["final_actions", "reasoning_critique_llm_outputs"],
+      "properties": {
+        "final_actions": {"type": "string"},
+        "reasoning_critique_llm_outputs": {"const": "explanatory_nonbinding"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "pathEntry": {
+      "type": "object",
+      "required": ["role", "path", "exists"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "exists": {"type": "boolean"},
+        "sha256": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  }
+}

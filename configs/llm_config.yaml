@@ -22,7 +22,7 @@ openai:
 # Ollama settings (used when provider == "ollama")
 ollama:
   base_url: "http://localhost:11434"
-  model: "llama3"
+  model: "devstral:latest"
 
 # Logging of agent interactions
 log_interactions: true

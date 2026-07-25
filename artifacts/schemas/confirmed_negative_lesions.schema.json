@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "confirmed_negative_lesions.schema.json",
+  "title": "Confirmed negative lesion manifest",
+  "type": "object",
+  "required": ["confirmed_negative_lesions"],
+  "properties": {
+    "confirmed_negative_lesions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/record"},
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "record": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "task_mode",
+        "lesion_status",
+        "confirmed_by",
+        "confirmation_date",
+        "confirmation_source",
+        "confirmation_scope"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "task_mode": {
+          "type": "string",
+          "enum": ["pancreas_lesion", "pancreas_lesion_subregions"]
+        },
+        "lesion_status": {"const": "confirmed_absent"},
+        "confirmed_by": {"type": "string", "minLength": 1},
+        "confirmation_date": {"type": "string", "minLength": 1},
+        "confirmation_source": {"type": "string", "minLength": 1},
+        "confirmation_scope": {"type": "string", "minLength": 1},
+        "notes": {"type": "string"}
+      },
+      "additionalProperties": true
+    }
+  }
+}

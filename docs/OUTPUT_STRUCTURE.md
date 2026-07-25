@@ -43,6 +43,7 @@ RUN_DIR/
   final_qc_decisions.csv
   eval_report.json
   execution_graph.json
+  run_manifest.json
 ```
 
 `threshold_calibration.json` is present when a calibration report is available.
@@ -75,3 +76,24 @@ actions are administrative data and must remain blinded during review.
 
 Do not treat shared summary folders, ad hoc report paths, or archived workflow
 layouts as the source of truth for a completed run.
+
+## Paper-Trackable Manifest And Aliases
+
+Each completed orchestrated run writes `run_manifest.json` at the run root. The
+manifest records the run ID, dataset, task mode, run directory, artifact paths,
+artifact hashes where available, selected input resources, and the deterministic
+authority boundary. It explicitly records that reasoning, critique, and LLM
+outputs are explanatory and nonbinding. The manifest does not include a stale
+self-entry for `run_manifest.json`; aliases point to it after it has been
+written.
+
+The task directory also receives lightweight JSON pointer aliases:
+
+```text
+outputs/DATASET/TASK_MODE/latest_run.json
+outputs/DATASET/TASK_MODE/latest_eval_report.json
+outputs/DATASET/TASK_MODE/latest_final_qc_decisions.json
+```
+
+Aliases point to the newest run artifacts and include target hashes. They do not
+copy large artifacts and do not delete, move, or rewrite older generated runs.

@@ -1346,7 +1346,7 @@ def main():
         "dataset_name":   _dataset,
         "task_mode":      _task_mode,
         "output_dir":     str(OUTPUT_JSON.parent),
-        "created_at":     datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "created_at":     datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "schema_version": "4",
         "n_cases":        n_processed + n_omitted,
         "n_processed":    n_processed,

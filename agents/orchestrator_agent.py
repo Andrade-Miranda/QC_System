@@ -23,6 +23,7 @@ from agents.validated_run_context_agent import (
 )
 from artifacts import read_json, resource_descriptor, write_artifact, write_json
 from artifacts.io import artifact_descriptor
+from artifacts.run_manifest import write_pointer_alias, write_run_manifest
 
 
 def _task_profile_path(project_root: Path, task_mode: str) -> Path:
@@ -131,6 +132,12 @@ def main() -> None:
         help="Existing calibrated thresholds to reuse with --skip-calibration.",
     )
     parser.add_argument("--golden-labels", type=Path, default=None, help="Optional golden labels artifact for evaluation.")
+    parser.add_argument(
+        "--confirmed-negative-lesions",
+        type=Path,
+        default=None,
+        help="Optional JSON manifest of explicitly confirmed absent lesion cases.",
+    )
     args = parser.parse_args()
 
     paths = resolve_project_paths(Path(args.paths_yaml) if args.paths_yaml else None)
@@ -186,19 +193,23 @@ def main() -> None:
         output_dirs=task_dirs,
         reuse_calibrated=args.skip_calibration,
         calibrated_thresholds_path=calibrated_thresholds,
+        confirmed_negative_lesions_path=args.confirmed_negative_lesions,
     )
     execution_steps.append(
         _step("validated_context", "ValidatedRunContextAgent", context_path, "config_validation")
     )
 
     validation_path = run_dir / "dataset_validation.json"
-    _run([
+    validation_cmd = [
         py, str(root / "agents" / "validation_agent.py"),
         *paths_arg,
         "--task-mode", args.task_mode,
         "--output", str(validation_path),
         "--run-id", run_id,
-    ], cwd=root)
+    ]
+    if args.confirmed_negative_lesions is not None:
+        validation_cmd.extend(["--confirmed-negative-lesions", str(args.confirmed_negative_lesions)])
+    _run(validation_cmd, cwd=root)
     execution_steps.append(
         _step("dataset_validation", "ValidationAgent", validation_path, "validated_context")
     )
@@ -269,6 +280,11 @@ def main() -> None:
 
     det_raw_dir = run_dir / "raw_qc_deterministic"
     cal_raw_dir = run_dir / "raw_qc_calibrated"
+    confirmed_args = (
+        ["--confirmed-negative-lesions", str(args.confirmed_negative_lesions)]
+        if args.confirmed_negative_lesions is not None
+        else []
+    )
     _run([
         py, str(root / "agents" / "qc_agent.py"),
         *paths_arg,
@@ -279,6 +295,7 @@ def main() -> None:
         "--score-version", args.score_version,
         "--overwrite",
         "--no-interactive",
+        *confirmed_args,
     ], cwd=root)
     _run([
         py, str(root / "agents" / "qc_agent.py"),
@@ -290,6 +307,7 @@ def main() -> None:
         "--score-version", args.score_version,
         "--overwrite",
         "--no-interactive",
+        *confirmed_args,
     ], cwd=root)
 
     det_artifact = run_dir / "qc_report_deterministic.json"
@@ -506,6 +524,68 @@ def main() -> None:
         graph_path=graph_path,
     )
     write_json(graph_path, graph)
+    manifest_path = run_dir / "run_manifest.json"
+    aliases = {
+        "latest_run": task_dirs["task_dir"] / "latest_run.json",
+        "latest_eval_report": task_dirs["task_dir"] / "latest_eval_report.json",
+        "latest_final_qc_decisions": task_dirs["task_dir"] / "latest_final_qc_decisions.json",
+    }
+    artifact_paths = {
+        "validated_run_context": context_path,
+        "dataset_validation": validation_path,
+        "summary": summary_artifact,
+        "deterministic_qc": det_artifact,
+        "calibrated_qc": cal_artifact,
+        "comparison": comparison,
+        "reasoning": reasoning,
+        "medical_critique": critique,
+        "routing": routing,
+        "final_decisions": final,
+        "evaluation": eval_report,
+        "execution_graph": graph_path,
+    }
+    if (run_dir / "decision_policy.yaml").exists():
+        artifact_paths["decision_policy"] = run_dir / "decision_policy.yaml"
+    write_run_manifest(
+        manifest_path,
+        run_id=run_id,
+        dataset_name=paths.dataset_name,
+        task_mode=args.task_mode,
+        run_dir=run_dir,
+        artifacts=artifact_paths,
+        resources={
+            "paths_config": paths.paths_yaml,
+            "task_profile": task_profile,
+            "thresholds_config": paths.thresholds_config,
+            **(
+                {"confirmed_negative_lesions": args.confirmed_negative_lesions}
+                if args.confirmed_negative_lesions is not None
+                else {}
+            ),
+        },
+        aliases=aliases,
+    )
+    write_pointer_alias(
+        aliases["latest_run"],
+        run_id=run_id,
+        run_dir=run_dir,
+        target=manifest_path,
+        role="latest_run_manifest",
+    )
+    write_pointer_alias(
+        aliases["latest_eval_report"],
+        run_id=run_id,
+        run_dir=run_dir,
+        target=eval_report,
+        role="latest_eval_report",
+    )
+    write_pointer_alias(
+        aliases["latest_final_qc_decisions"],
+        run_id=run_id,
+        run_dir=run_dir,
+        target=final,
+        role="latest_final_qc_decisions",
+    )
     print(f"\nArtifact QC workflow complete: {run_dir}")
 
 

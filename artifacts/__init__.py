@@ -3,11 +3,13 @@
 from .io import load_artifact, read_json, write_artifact, write_json
 from .hashing import hash_file, hash_json_payload, resource_descriptor
 from .loaders import load_cases_payload, load_qc_cases, load_summary_cases, unwrap_payload
+from .confirmed_negative_lesions import load_confirmed_negative_lesions
 
 __all__ = [
     "hash_file",
     "hash_json_payload",
     "load_artifact",
+    "load_confirmed_negative_lesions",
     "load_cases_payload",
     "load_qc_cases",
     "load_summary_cases",

@@ -368,7 +368,7 @@ def calibrate(
     meta = cfg.setdefault("THRESHOLD_METADATA", {})
     meta["method"] = "calibrated"
     meta["source"] = "reference_clean_calibration"
-    meta["created_at"] = _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    meta["created_at"] = _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     meta["calibrated_from_summary"] = str(summary_path)
     meta["calibrated_from_summary_payload_sha256"] = hash_json_payload(cases)
     meta["task_mode"] = task_mode

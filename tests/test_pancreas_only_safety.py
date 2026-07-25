@@ -40,7 +40,7 @@ def _case(*, pancreas_volume=0.0, pancreas_empty=True, lesion_volume=0.0):
     }
 
 
-def _json_case(tmp_path, raw_case, task_mode):
+def _json_case(tmp_path, raw_case, task_mode, confirmed_negative_lesions=None):
     thresholds = {
         "TASK_MODE": task_mode,
         "FOV_POLICY": {
@@ -57,7 +57,11 @@ def _json_case(tmp_path, raw_case, task_mode):
             },
         },
     }
-    results = run_qc({"case": raw_case}, thresholds)
+    results = run_qc(
+        {"case": raw_case},
+        thresholds,
+        confirmed_negative_lesions=confirmed_negative_lesions,
+    )
     report_path = tmp_path / "qc.json"
     generate_json_report(
         results,
@@ -107,18 +111,33 @@ class PancreasOnlySafetyTests(unittest.TestCase):
         self.assertEqual(emitted["measurements"]["pancreas_volume_mm3"], 50_000.0)
         self.assertEqual(emitted["hu_statistics"]["pancreas_median_hu"], 80.0)
 
-    def test_lesion_negative_behavior_is_unchanged(self):
+    def test_lesion_negative_requires_confirmation(self):
         raw_case = _case(pancreas_volume=50_000.0, pancreas_empty=False)
         result, emitted = _json_case(self.tmp_path, raw_case, "pancreas_lesion")
 
         self.assertEqual(result["sample_type"], "negative")
-        self.assertEqual(result["recommendation"], "keep")
-        self.assertEqual(result["decision_hint"], "keep_negative")
+        self.assertEqual(result["recommendation"], "exclude")
+        self.assertIn("unconfirmed_negative_lesion", emitted["retrieval_tags"])
+
+        confirmed, confirmed_emitted = _json_case(
+            self.tmp_path,
+            raw_case,
+            "pancreas_lesion",
+            confirmed_negative_lesions={
+                "case": {
+                    "lesion_status": "confirmed_absent",
+                    "confirmation_source": "fixture",
+                    "confirmed_by": "test",
+                }
+            },
+        )
+        self.assertEqual(confirmed["recommendation"], "keep")
+        self.assertEqual(confirmed["decision_hint"], "keep_negative")
         self.assertEqual(emitted["training_objective"], "pancreas_lesion_segmentation")
-        self.assertIn("negative_case", emitted["retrieval_tags"])
-        self.assertEqual(emitted["target_presence"]["target"], "pancreas")
-        self.assertEqual(emitted["target_presence"]["role"], "context")
-        self.assertEqual(emitted["target_presence"]["expected_presence"], "required")
+        self.assertIn("negative_case", confirmed_emitted["retrieval_tags"])
+        self.assertEqual(confirmed_emitted["target_presence"]["target"], "pancreas")
+        self.assertEqual(confirmed_emitted["target_presence"]["role"], "context")
+        self.assertEqual(confirmed_emitted["target_presence"]["expected_presence"], "required")
 
 
 if __name__ == "__main__":

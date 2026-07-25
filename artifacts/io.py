@@ -17,7 +17,7 @@ ARTIFACT_SCHEMA_VERSION = "1.0"
 
 
 def _utc_now() -> str:
-    return _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    return _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def _git_commit(project_root: Path | None = None) -> str | None:

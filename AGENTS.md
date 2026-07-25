@@ -4,7 +4,12 @@ This document explains the agent scripts in `QC_System/agents/` and how they fit
 
 ## AgentQC Project Memory
 
-This directory contains the executable implementation. The AgentQC source-of-truth project memory lives in the Obsidian vault:
+This directory contains the executable implementation. The canonical code source
+for cross-machine synchronization is the private GitHub repository
+`https://github.com/Andrade-Miranda/QC_System.git`. Local clone paths are
+machine-specific; for this Mac clone the active path is
+`/Users/gustavoandrade/Documents/GitHub/QC_System`. The AgentQC source-of-truth
+project memory lives in the Obsidian vault:
 
 `/home/gandrade-miranda/Dropbox/IMT-Ales/Articles/AgentQC/AgentQC/Task-Aware Medical AI Dataset Reliability Framework/memory/`
 
@@ -21,6 +26,10 @@ Before substantial changes, read:
 - `/home/gandrade-miranda/Dropbox/IMT-Ales/Articles/AgentQC/AgentQC/Task-Aware Medical AI Dataset Reliability Framework/memory/DETERMINISTIC_QC_RULES.md`
 
 Preserve the core rule: deterministic QC, routing, and policy remain the source of truth. Reasoning and critique explain artifacts only and cannot control routing or final decisions. V2 learned-evidence and world-model concepts live under `11_Ideas/V2/` and are outside active V1 implementation.
+
+For implementation approval, use the actual local clone path in `allowed_paths`.
+Do not treat the Dropbox `Code` symlink or another machine's local path as
+equivalent without explicit approval.
 
 ## Overview
 

@@ -1,0 +1,23 @@
+{
+  "manifest_version": "1.0",
+  "run_id": "run-001",
+  "dataset_name": "FixtureDataset",
+  "task_mode": "pancreas_lesion",
+  "run_dir": "outputs/FixtureDataset/pancreas_lesion/runs/run-001",
+  "artifacts": {
+    "final_decisions": {
+      "role": "final_decisions",
+      "path": "outputs/FixtureDataset/pancreas_lesion/runs/run-001/final_qc_decisions.json",
+      "exists": true,
+      "sha256": null
+    }
+  },
+  "resources": {},
+  "aliases": {
+    "latest_run": "outputs/FixtureDataset/pancreas_lesion/latest_run.json"
+  },
+  "authority": {
+    "final_actions": "final_qc_decisions.json",
+    "reasoning_critique_llm_outputs": "explanatory_nonbinding"
+  }
+}

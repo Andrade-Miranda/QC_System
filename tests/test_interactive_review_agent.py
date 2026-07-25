@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -491,28 +492,28 @@ class InteractiveReviewAgentTests(unittest.TestCase):
     def test_cli_mode_paths_and_one_shot(self):
         script = str(ROOT / "agents" / "interactive_review_agent.py")
         admin = subprocess.run([
-            "/usr/bin/python3", script, "--run-dir", str(self.run_dir), "--mode", "admin",
+            sys.executable, script, "--run-dir", str(self.run_dir), "--mode", "admin",
             "--query", "summary", "--provider", "none", "--no-log",
         ], cwd=ROOT, capture_output=True, text=True, check=False)
         self.assertEqual(admin.returncode, 0, admin.stderr)
         self.assertIn("Run run-1", admin.stdout)
 
         external_rejected = subprocess.run([
-            "/usr/bin/python3", script, "--run-dir", str(self.run_dir), "--mode", "admin",
+            sys.executable, script, "--run-dir", str(self.run_dir), "--mode", "admin",
             "--query", "summary", "--provider", "openai", "--no-log",
         ], cwd=ROOT, capture_output=True, text=True, check=False)
         self.assertEqual(external_rejected.returncode, 2)
         self.assertIn("allow-external-provider", external_rejected.stderr)
 
         rejected = subprocess.run([
-            "/usr/bin/python3", script, "--run-dir", str(self.run_dir), "--mode", "reviewer",
+            sys.executable, script, "--run-dir", str(self.run_dir), "--mode", "reviewer",
             "--query", "summary", "--provider", "none",
         ], cwd=ROOT, capture_output=True, text=True, check=False)
         self.assertEqual(rejected.returncode, 2)
         self.assertIn("requires --review-package", rejected.stderr)
 
         reviewer = subprocess.run([
-            "/usr/bin/python3", script, "--review-package", str(self.reviewer_package),
+            sys.executable, script, "--review-package", str(self.reviewer_package),
             "--mode", "reviewer", "--query", "summary", "--provider", "none",
         ], cwd=ROOT, capture_output=True, text=True, check=False)
         self.assertEqual(reviewer.returncode, 0, reviewer.stderr)

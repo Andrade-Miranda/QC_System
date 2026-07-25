@@ -42,14 +42,20 @@ _DEFAULT_PATHS_YAML = _CONFIGS_DIR / "paths.yaml"
 
 logger = logging.getLogger(__name__)
 
+APPROVED_V1_TASK_MODES: frozenset[str] = frozenset({
+    "pancreas_only",
+    "pancreas_lesion",
+    "pancreas_lesion_subregions",
+})
+
+
 def _discover_task_modes() -> frozenset:
     profiles = _CONFIGS_DIR / "task_profiles"
     modes = {p.stem for p in profiles.glob("*.yaml")} if profiles.exists() else set()
-    return frozenset(modes or {
-        "pancreas_only",
-        "pancreas_lesion",
-        "pancreas_lesion_subregions",
-    })
+    # V1 is deliberately limited to the three approved segmentation profiles.
+    # Extra YAML files do not become executable task modes without an approved
+    # implementation plan for their evidence and decision semantics.
+    return frozenset((modes & APPROVED_V1_TASK_MODES) or APPROVED_V1_TASK_MODES)
 
 
 # Supported task modes — sourced from configs/task_profiles/*.yaml when present.

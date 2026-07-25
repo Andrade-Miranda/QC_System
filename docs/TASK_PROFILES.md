@@ -3,6 +3,10 @@
 Task profiles live in `configs/task_profiles/` and are selected with
 `--task-mode`.
 
+V1 executable support is intentionally limited to exactly three CT segmentation
+profiles. Extra YAML files do not become supported task families without an
+approved implementation plan for their evidence, routing, and policy semantics.
+
 | Task mode | Required segmentations | Hard domains | Calibratable domains |
 | --- | --- | --- | --- |
 | `pancreas_only` | pancreas | `geometry_integrity` | `fov_integrity`, `pancreas_context` |
@@ -48,6 +52,43 @@ CALIBRATABLE_DOMAINS:
 Profiles determine validation requirements and which QC domains are active,
 hard, or calibratable. They do not grant reasoning, critique, or LLM outputs any
 decision authority.
+
+## Confirmed Negative Lesion Cases
+
+For lesion-capable segmentation profiles (`pancreas_lesion` and
+`pancreas_lesion_subregions`), absent lesion supervision is allowed only when a
+run supplies explicit confirmed-negative provenance. Unconfirmed absent or empty
+lesion masks fail closed as `unconfirmed_negative_lesion`; they are not silently
+converted into valid negative training samples.
+
+Use the optional manifest argument in orchestrated runs:
+
+```bash
+python scripts/run_qc.py \
+  --task-mode pancreas_lesion \
+  --confirmed-negative-lesions path/to/confirmed_negative_lesions.json
+```
+
+Minimal manifest shape:
+
+```json
+{
+  "confirmed_negative_lesions": [
+    {
+      "case_id": "case_001",
+      "task_mode": "pancreas_lesion",
+      "lesion_status": "confirmed_absent",
+      "confirmed_by": "reviewer_or_source",
+      "confirmation_date": "2026-07-24",
+      "confirmation_source": "manual_review_or_dataset_metadata",
+      "confirmation_scope": "Lesion absent for this segmentation task."
+    }
+  ]
+}
+```
+
+The manifest is provenance for the dataset-curation task. It is not an external
+medical-correctness claim unless the source is a locked human/golden label.
 
 ## Visible Pancreas Profile
 

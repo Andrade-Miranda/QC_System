@@ -1,0 +1,13 @@
+{
+  "confirmed_negative_lesions": [
+    {
+      "case_id": "case_001",
+      "task_mode": "pancreas_lesion",
+      "lesion_status": "confirmed_absent",
+      "confirmed_by": "fixture_reviewer",
+      "confirmation_date": "2026-07-24",
+      "confirmation_source": "fixture_manifest",
+      "confirmation_scope": "Lesion absent for lesion segmentation task."
+    }
+  ]
+}

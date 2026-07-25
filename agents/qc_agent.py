@@ -57,6 +57,7 @@ from agents.utils.paths import (
     build_output_dirs,
     VALID_TASK_MODES,
 )
+from artifacts.confirmed_negative_lesions import load_confirmed_negative_lesions
 from artifacts.loaders import load_summary_cases
 
 def _get_omitted_cases(data: dict) -> list[str]:
@@ -708,6 +709,8 @@ _FLAG_DOMAIN_MAP: dict[str, str] = {
     "pancreas_hole_annotation_suspected": "lesion_localization",
     "lesion_in_subregion_spillover":      "lesion_localization",
     "lesion_mask_empty":                  "lesion_localization",
+    "confirmed_negative_lesion":          "lesion_localization",
+    "unconfirmed_negative_lesion":        "lesion_localization",
     "required_target_missing":            "pancreas_context",
     # lesion_burden — lesion size plausibility
     "very_small_lesion":                  "lesion_burden",
@@ -1229,7 +1232,12 @@ def _partial_visibility_assessment(
 # CORE QC ANALYSIS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def run_qc(data: dict, thr: dict | None = None, score_version: str = "v2") -> dict:
+def run_qc(
+    data: dict,
+    thr: dict | None = None,
+    score_version: str = "v2",
+    confirmed_negative_lesions: dict[str, dict] | None = None,
+) -> dict:
     """
     Analyse every case and return:
         {case_id: {flags, score, risk_level, evidence, recommendation,
@@ -1284,6 +1292,7 @@ def run_qc(data: dict, thr: dict | None = None, score_version: str = "v2") -> di
     # Determine effective task mode once for the whole dataset.
     # Passing `data` enables auto-detection when TASK_MODE="auto" (or absent).
     _dataset_task_mode = _get_task_mode(thr, data)
+    _confirmed_negatives = confirmed_negative_lesions or {}
 
     results: dict = {}
 
@@ -1412,6 +1421,11 @@ def run_qc(data: dict, thr: dict | None = None, score_version: str = "v2") -> di
         pancreas_present = not bool(qc.get("pancreas_mask_empty")) and pvol > 0
         lesion_present   = not (qc.get("lesion_mask_empty") or
                                 (n_les == 0 and total_lv == 0))
+        negative_confirmation = (
+            _confirmed_negatives.get(case_id)
+            if _dataset_task_mode != "pancreas_only" and not lesion_present
+            else None
+        )
 
         # Record primary numeric evidence used by all downstream consumers
         evidence["pancreas_present"]      = pancreas_present
@@ -1419,6 +1433,13 @@ def run_qc(data: dict, thr: dict | None = None, score_version: str = "v2") -> di
         evidence["pancreas_volume_mm3"]   = pvol
         evidence["lesion_volume_mm3"]     = total_lv
         evidence["overlap_rate_vs_lesion"] = ov_rate
+        if _dataset_task_mode != "pancreas_only" and not lesion_present:
+            evidence["lesion_absence_confirmation"] = {
+                "status": "confirmed_absent" if negative_confirmation else "missing",
+                "confirmed": bool(negative_confirmation),
+                "source": (negative_confirmation or {}).get("confirmation_source"),
+                "confirmed_by": (negative_confirmation or {}).get("confirmed_by"),
+            }
         if _loa:
             evidence["hole_annotation_detected"] = _loa.get("hole_filling_changed_overlap", False)
             evidence["regions_added_overlap"]    = _loa.get("regions_added_overlap", False)
@@ -1446,9 +1467,24 @@ def run_qc(data: dict, thr: dict | None = None, score_version: str = "v2") -> di
                 flags.append(("CRITICAL", "required_target_missing",
                               "Required primary target pancreas is empty or missing"))
         elif not lesion_present:
-            # Negative sample: informational only, no penalty
-            flags.append(("INFO", "lesion_mask_empty",
-                           "No lesion mask — valid negative sample"))
+            if negative_confirmation:
+                flags.append(("INFO", "confirmed_negative_lesion",
+                               "Lesion absent with explicit confirmed-negative provenance"))
+                flags.append(("INFO", "lesion_mask_empty",
+                               "No lesion mask — explicitly confirmed negative sample"))
+                task_reasons = [
+                    *task_reasons,
+                    "Lesion absence is explicitly confirmed by the supplied manifest",
+                ]
+            else:
+                flags.append(("CRITICAL", "unconfirmed_negative_lesion",
+                               "Lesion absent without explicit confirmed-negative provenance"))
+                flags.append(("INFO", "lesion_mask_empty",
+                               "No lesion mask — negative status is unconfirmed"))
+                task_reasons = [
+                    *task_reasons,
+                    "Lesion-capable task requires explicit confirmation before absent lesion cases can be used as negatives",
+                ]
         else:
             # Positive sample: evaluate overlap quality
             if not pancreas_present:
@@ -2913,6 +2949,11 @@ def _build_retrieval_tags(
     tags.append(f"{sample_type}_case")
     if sample_type == "missing_required_target":
         tags.append("required_target_missing")
+    confirmation = ev.get("lesion_absence_confirmation") or {}
+    if confirmation.get("status") == "missing":
+        tags.append("unconfirmed_negative_lesion")
+    elif confirmation.get("status") == "confirmed_absent":
+        tags.append("confirmed_negative_lesion")
 
     # Top-level recommendation and risk
     rec  = triage.get("recommendation", "keep")
@@ -4225,12 +4266,19 @@ class QCAgent:
         return f"PanTS_{m.group().zfill(8)}"
 
     def __init__(self, data: dict, report_dir: Path | None = None,
-                 thr: dict | None = None, score_version: str = "v2"):
+                 thr: dict | None = None, score_version: str = "v2",
+                 confirmed_negative_lesions: dict[str, dict] | None = None):
         self.data           = data
         self.report_dir     = report_dir or _HERE
         self.thr            = thr
         self.score_version  = score_version
-        self.qc_results     = run_qc(data, thr, score_version=score_version)
+        self.confirmed_negative_lesions = confirmed_negative_lesions or {}
+        self.qc_results     = run_qc(
+            data,
+            thr,
+            score_version=score_version,
+            confirmed_negative_lesions=self.confirmed_negative_lesions,
+        )
         self._omitted_cases = _get_omitted_cases(data)
 
         self._by_tag: dict[str, list[str]] = {}
@@ -5055,6 +5103,12 @@ def main() -> None:
                         help=("Write qc_report_debug.json alongside the standard reports. "
                               "Includes raw score_components, flags, evidence, and "
                               "scoring_details for each case."))
+    parser.add_argument(
+        "--confirmed-negative-lesions",
+        type=Path,
+        default=None,
+        help="Optional JSON manifest of explicitly confirmed absent lesion cases.",
+    )
     args = parser.parse_args()
 
     # Load centralized path config
@@ -5173,11 +5227,20 @@ def main() -> None:
         "task_mode":      _task_mode,
         "summary_source": str(json_path),
         "output_dir":     str(report_dir),
-        "created_at":     datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "created_at":     datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "schema_version": "4",
         "training_objective": _training_objective(_task_mode),
         "primary_target": _primary_target(_task_mode),
     }
+
+    try:
+        confirmed_negative_payload = load_confirmed_negative_lesions(
+            args.confirmed_negative_lesions,
+            task_mode=_task_mode,
+            known_case_ids=set(data),
+        )
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"[ERROR] Invalid confirmed-negative lesion manifest: {exc}") from exc
 
     # Inject the CLI-resolved task mode so run_qc() always sees the correct value,
     # even when thresholds.yaml has a different TASK_MODE or "auto".
@@ -5189,9 +5252,20 @@ def main() -> None:
         "threshold_source": str(_thr_path),
         "threshold_metadata": _thr_meta,
         "effective_thresholds": _effective_thresholds(thr),
+        "confirmed_negative_lesions": {
+            key: confirmed_negative_payload[key]
+            for key in ("status", "source", "count", "case_ids")
+            if key in confirmed_negative_payload
+        },
     })
 
-    agent = QCAgent(data, report_dir=report_dir, thr=thr, score_version=args.score_version)
+    agent = QCAgent(
+        data,
+        report_dir=report_dir,
+        thr=thr,
+        score_version=args.score_version,
+        confirmed_negative_lesions=confirmed_negative_payload.get("cases") or {},
+    )
     print(f"Saving QC reports to {report_dir} ...")
     agent.save_reports(report_metadata=_report_metadata, debug=args.debug)
     suffix = "  qc_report.txt  qc_report.json  qc_report.csv"

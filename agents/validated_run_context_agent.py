@@ -11,6 +11,7 @@ from typing import Any
 import yaml
 
 from artifacts import resource_descriptor, write_artifact
+from artifacts.confirmed_negative_lesions import load_confirmed_negative_lesions
 from artifacts.hashing import hash_json_payload
 from artifacts.loaders import load_summary_cases
 
@@ -170,6 +171,7 @@ def generate_validated_run_context(
     output_dirs: Mapping[str, Path] | None = None,
     reuse_calibrated: bool = False,
     calibrated_thresholds_path: Path,
+    confirmed_negative_lesions_path: Path | None = None,
     validation_status: str = "valid",
     warnings: Sequence[str] = (),
     required_artifacts: Sequence[str] = REQUIRED_RUN_ARTIFACTS,
@@ -178,6 +180,12 @@ def generate_validated_run_context(
     if validation_status not in {"valid", "valid_with_warnings", "invalid"}:
         raise ValueError(f"Unsupported validation status: {validation_status}")
     profile_path = Path(profile_path).resolve()
+    case_ids = _known_case_ids(paths)
+    confirmed_negative_lesions = load_confirmed_negative_lesions(
+        confirmed_negative_lesions_path,
+        task_mode=task_mode,
+        known_case_ids=set(case_ids),
+    )
     dataset_resources = [
         _named_resource("raw_dataset_root", paths.raw_root, required=True),
         _named_resource("raw_images_dir", paths.raw_images_dir, required=True),
@@ -201,7 +209,12 @@ def generate_validated_run_context(
         "validation_status": validation_status,
         "warnings": [str(warning) for warning in warnings],
         "required_artifacts": list(required_artifacts),
-        "case_ids": _known_case_ids(paths),
+        "case_ids": case_ids,
+        "confirmed_negative_lesions": {
+            key: confirmed_negative_lesions[key]
+            for key in ("status", "source", "count", "case_ids")
+            if key in confirmed_negative_lesions
+        },
     }
     input_resources = [
         *dataset_resources,
@@ -214,6 +227,14 @@ def generate_validated_run_context(
             required=reuse_calibrated,
         ),
     ]
+    if confirmed_negative_lesions_path is not None:
+        input_resources.append(
+            _named_resource(
+                "confirmed_negative_lesions",
+                confirmed_negative_lesions_path,
+                required=True,
+            )
+        )
     return write_artifact(
         output_path,
         artifact_type="validated_run_context",
