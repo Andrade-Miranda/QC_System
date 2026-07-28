@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 Dataset Summarizer
 ==================
@@ -226,6 +227,87 @@ def load_sitk_image(path: Path):
         return None
 
 
+def _valid_mask_geometry(mask_sitk, ref_sitk) -> bool:
+    if mask_sitk is None or ref_sitk is None:
+        return False
+    try:
+        return bool(compare_to_reference_geometry(ref_sitk, mask_sitk).get("affine_consistency_with_image"))
+    except Exception:
+        return False
+
+
+def build_lesion_annotation_evidence(
+    *,
+    separate_path: Path,
+    separate_sitk,
+    separate_arr: np.ndarray | None,
+    ref_sitk,
+    task_mode: str,
+) -> dict:
+    """Classify deterministic lesion-annotation evidence for lesion tasks.
+
+    Lesion evidence for the current AgentQC experiments comes exclusively from
+    the separate binary ``segmentations/pancreatic_lesion.nii.gz`` mask.
+    Missing, unreadable, or geometry-invalid masks do not prove absence.  Empty
+    but readable geometry-valid separate masks prove absence for the configured
+    lesion task.
+    """
+    if not should_compute_lesion(task_mode):
+        return {
+            "status": "not_applicable",
+            "lesion_present": None,
+            "absence_confirmed": False,
+            "selected_source": None,
+            "sources": [],
+        }
+
+    def _source_entry(name: str, path: Path, sitk_obj, arr: np.ndarray | None) -> dict:
+        exists = path.exists()
+        readable = sitk_obj is not None
+        geometry_valid = _valid_mask_geometry(sitk_obj, ref_sitk) if readable else False
+        positive_voxels = None
+        if readable and geometry_valid and arr is not None:
+            positive_voxels = int(np.count_nonzero(arr > 0))
+        status = "valid"
+        if not exists:
+            status = "missing"
+        elif not readable:
+            status = "unreadable"
+        elif not geometry_valid:
+            status = "geometry_mismatch"
+        return {
+            "name": name,
+            "path": str(path),
+            "exists": bool(exists),
+            "readable": bool(readable),
+            "geometry_valid": bool(geometry_valid),
+            "status": status,
+            "label_value": None,
+            "positive_voxels": positive_voxels,
+            "lesion_present": (positive_voxels is not None and positive_voxels > 0),
+        }
+
+    separate_source = _source_entry("separate_lesion_mask", separate_path, separate_sitk, separate_arr)
+    sources = [separate_source]
+
+    if separate_source["status"] != "valid":
+        status = "insufficient_evidence"
+        selected = None
+        lesion_present = None
+    else:
+        lesion_present = bool(separate_source["lesion_present"])
+        status = "lesion_present" if lesion_present else "confirmed_absent"
+        selected = "separate_lesion_mask"
+
+    return {
+        "status": status,
+        "lesion_present": lesion_present,
+        "absence_confirmed": status == "confirmed_absent",
+        "selected_source": selected,
+        "sources": sources,
+    }
+
+
 # ===========================================================================
 # CASE-STATUS HELPERS
 # ===========================================================================
@@ -315,6 +397,7 @@ def _null_case_schema(case_id: str, meta_dict: dict, case_status: dict) -> dict:
             "pancreas_mask_affine_mismatch"     : None,
             "lesion_mask_affine_mismatch"       : None,
             "any_affine_mismatch"               : None,
+            "lesion_annotation_evidence"        : None,
             "lesion_overlap_analysis"           : None,
         },
         "hu_statistics"  : {
@@ -925,9 +1008,24 @@ def process_case(case_id: str, meta_dict: dict,
         return {"exists": True, "path": path_str, **geom, **comp}
 
     pan_geom    = _mask_geom_entry(pancreas_sitk, pancreas_path)
+
+    # Convert pancreas and lesion to numpy now that geometry checks are done
+    pancreas_arr = sitk_to_uint8(pancreas_sitk) if pancreas_sitk is not None else None
+    separate_lesion_arr = sitk_to_uint8(lesion_sitk) if lesion_sitk is not None else None
+
+    lesion_annotation_evidence = build_lesion_annotation_evidence(
+        separate_path=_lesion_path,
+        separate_sitk=lesion_sitk,
+        separate_arr=separate_lesion_arr,
+        ref_sitk=sitk_img,
+        task_mode=task_mode,
+    )
     if should_compute_lesion(task_mode):
+        lesion_arr = separate_lesion_arr
         lesion_geom = _mask_geom_entry(lesion_sitk, lesion_path)
+        lesion_geom["source"] = "separate_lesion_mask"
     else:
+        lesion_arr = None
         lesion_geom = {"exists": False, "path": lesion_path,
                        "reason": f"not_applicable: TASK_MODE={task_mode}"}
 
@@ -944,10 +1042,6 @@ def process_case(case_id: str, meta_dict: dict,
             "any_affine_mismatch":      pan_mismatch or lesion_mismatch,
         },
     }
-
-    # Convert pancreas and lesion to numpy now that geometry checks are done
-    pancreas_arr = sitk_to_uint8(pancreas_sitk) if pancreas_sitk is not None else None
-    lesion_arr   = sitk_to_uint8(lesion_sitk)   if lesion_sitk   is not None else None
 
     if should_compute_subregions(task_mode):
         head_arr, _ = load_mask(SEG_HEAD)
@@ -1133,6 +1227,7 @@ def process_case(case_id: str, meta_dict: dict,
         "pancreas_mask_affine_mismatch":     pan_mismatch,
         "lesion_mask_affine_mismatch":       lesion_mismatch,
         "any_affine_mismatch":               pan_mismatch or lesion_mismatch,
+        "lesion_annotation_evidence":        lesion_annotation_evidence,
         "lesion_overlap_analysis": {
             "overlap_reference_used_for_qc": (
                 "regions_union"
@@ -1170,6 +1265,7 @@ def process_case(case_id: str, meta_dict: dict,
         qc["total_overlap_rate_vs_pancreas"]   = None
         qc["lesion_mask_affine_mismatch"]      = None
         qc["any_affine_mismatch"]              = pan_mismatch
+        qc["lesion_annotation_evidence"]       = None
         qc["lesion_overlap_analysis"]          = None
 
     return {

@@ -55,7 +55,7 @@ class ConfirmedNegativeLesionTests(unittest.TestCase):
             }
         }
 
-    def test_missing_lesion_mask_requires_explicit_confirmation(self) -> None:
+    def test_missing_lesion_mask_is_not_converted_to_negative_by_manifest(self) -> None:
         without_confirmation = validate_dataset(self.paths, "pancreas_lesion", self.profile)
         self.assertEqual(without_confirmation["status"], "failed")
         self.assertIn("missing_segmentations:pancreatic_lesion.nii.gz", without_confirmation["cases"]["case_001"]["errors"])
@@ -66,8 +66,9 @@ class ConfirmedNegativeLesionTests(unittest.TestCase):
             self.profile,
             confirmed_negative_lesions_path=self.manifest,
         )
-        self.assertEqual(with_confirmation["status"], "passed")
-        self.assertFalse(with_confirmation["cases"]["case_001"]["omit_from_training"])
+        self.assertEqual(with_confirmation["status"], "failed")
+        self.assertTrue(with_confirmation["cases"]["case_001"]["omit_from_training"])
+        self.assertIn("missing_segmentations:pancreatic_lesion.nii.gz", with_confirmation["cases"]["case_001"]["errors"])
         self.assertEqual(
             with_confirmation["cases"]["case_001"]["confirmed_negative_lesion"]["lesion_status"],
             "confirmed_absent",
@@ -111,7 +112,7 @@ class ConfirmedNegativeLesionTests(unittest.TestCase):
             "hu_statistics": {"hu_statistics_status": "pancreas_only_negative_case"},
         }
 
-    def test_qc_rejects_unconfirmed_empty_lesion_and_keeps_confirmed_negative(self) -> None:
+    def test_qc_uses_annotation_evidence_not_manifest_for_empty_lesion_status(self) -> None:
         data = {"case_001": self._summary_case()}
         unconfirmed = run_qc(data, {"TASK_MODE": "pancreas_lesion"})["case_001"]
         self.assertEqual(unconfirmed["recommendation"], "exclude")
@@ -128,8 +129,8 @@ class ConfirmedNegativeLesionTests(unittest.TestCase):
                 }
             },
         )["case_001"]
-        self.assertEqual(confirmed["recommendation"], "keep")
-        self.assertTrue(confirmed["evidence"]["lesion_absence_confirmation"]["confirmed"])
+        self.assertEqual(confirmed["recommendation"], "exclude")
+        self.assertFalse(confirmed["evidence"]["lesion_absence_confirmation"]["confirmed"])
 
 
 if __name__ == "__main__":

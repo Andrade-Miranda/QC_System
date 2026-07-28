@@ -1,4 +1,4 @@
-# Confirmed Negative Lesion Manifests
+# Confirmed Negative Lesion Evidence
 
 Lesion-capable V1 segmentation profiles support confirmed negative cases only
 with explicit provenance. This applies to:
@@ -12,9 +12,24 @@ rejected fail-closed during validation.
 
 ## Contract
 
-Absent or empty lesion supervision is accepted as a negative sample only when a
-manifest supplies a matching `case_id`, active `task_mode`, and
-`lesion_status: confirmed_absent` record.
+Absent or empty lesion supervision is accepted as a negative sample only when
+the separate lesion mask proves absence:
+
+1. Lesion status is determined exclusively from
+   `labelsTr/CASE_ID/segmentations/pancreatic_lesion.nii.gz`.
+2. A readable, geometry-valid nonempty separate lesion mask means lesion present.
+3. A readable, geometry-valid empty separate lesion mask means confirmed absent.
+4. A missing, unreadable, incomplete, or geometry-invalid separate lesion mask
+   means insufficient evidence and fails closed.
+
+`combined_labels.nii.gz` and other shared multi-label annotations have no role in
+lesion presence, lesion absence, contradiction detection, review routing,
+scoring, or final decisions. They cannot confirm lesion absence and cannot create
+separate-versus-shared lesion contradiction evidence.
+
+A manifest with matching `case_id`, active `task_mode`, and
+`lesion_status: confirmed_absent` may still be recorded as provenance, but it
+does not replace the required separate lesion-mask evidence in current runs.
 
 Required fields per record:
 
@@ -27,8 +42,9 @@ Required fields per record:
 - `confirmation_scope`
 
 Unconfirmed absent lesion masks fail closed and are surfaced as deterministic QC
-evidence. The manifest is a provenance artifact, not a medical-correctness claim
-unless it comes from locked human/golden labels.
+evidence. Separate-mask-derived absence and manifest provenance are dataset
+curation provenance, not external medical-correctness claims unless they come
+from locked human/golden labels.
 
 ## CLI
 

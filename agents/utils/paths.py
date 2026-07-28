@@ -18,6 +18,7 @@ Usage
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -39,6 +40,14 @@ _PROJECT_ROOT  = _AGENTS_DIR.parent         # QC_System/
 
 _CONFIGS_DIR   = _PROJECT_ROOT / "configs"
 _DEFAULT_PATHS_YAML = _CONFIGS_DIR / "paths.yaml"
+
+_ENV_CONFIG_OVERRIDES = {
+    "AGENTQC_PROJECT_ROOT": "PROJECT_ROOT",
+    "AGENTQC_DATASET_CONFIG": "DATASET_CONFIG",
+    "AGENTQC_RAW_DATASET_ROOT": "RAW_DATASET_ROOT",
+    "AGENTQC_OUTPUT_ROOT": "OUTPUT_ROOT",
+    "AGENTQC_LOGS_DIR": "LOGS_DIR",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +106,36 @@ class ProjectPaths:
     thresholds_config:            Path = field(default_factory=Path)
     default_threshold_method:     str = "deterministic"
     paths_yaml:                   Path = field(default_factory=Path)
+    raw_dataset_root_configured:  bool = False
+
+
+def _expand_path_value(value: Any) -> str:
+    return os.path.expandvars(os.path.expanduser(str(value).strip()))
+
+
+def _resolve_project_root(value: Any) -> Path:
+    raw = _expand_path_value(value) if value else ""
+    if not raw:
+        return _PROJECT_ROOT
+    path = Path(raw)
+    return path.resolve() if path.is_absolute() else (_PROJECT_ROOT / path).resolve()
+
+
+def _resolve_path(value: Any, base: Path) -> Path:
+    raw = _expand_path_value(value) if value else ""
+    if not raw:
+        return Path()
+    path = Path(raw)
+    return path.resolve() if path.is_absolute() else (base / path).resolve()
+
+
+def _apply_env_overrides(cfg: dict[str, Any], *, keys: set[str] | None = None) -> None:
+    for env_name, cfg_key in _ENV_CONFIG_OVERRIDES.items():
+        if keys is not None and cfg_key not in keys:
+            continue
+        env_value = os.environ.get(env_name)
+        if env_value is not None and env_value.strip():
+            cfg[cfg_key] = env_value
 
 
 def load_paths_config(yaml_path: Path | None = None) -> dict[str, Any]:
@@ -125,9 +164,11 @@ def load_paths_config(yaml_path: Path | None = None) -> dict[str, Any]:
     with open(yaml_path, encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh) or {}
 
-    # Resolve PROJECT_ROOT early so we can find the dataset config
-    project_root_str = cfg.get("PROJECT_ROOT", "")
-    project_root = Path(project_root_str).resolve() if project_root_str else _PROJECT_ROOT
+    # Environment PROJECT_ROOT / DATASET_CONFIG may affect dataset-config lookup.
+    _apply_env_overrides(cfg, keys={"PROJECT_ROOT", "DATASET_CONFIG"})
+
+    # Resolve PROJECT_ROOT early so we can find the dataset config.
+    project_root = _resolve_project_root(cfg.get("PROJECT_ROOT", ""))
 
     # Optionally merge a per-dataset config on top
     dataset_config_rel = cfg.get("DATASET_CONFIG", "")
@@ -143,6 +184,23 @@ def load_paths_config(yaml_path: Path | None = None) -> dict[str, Any]:
         else:
             logger.warning("DATASET_CONFIG points to missing file: %s", ds_cfg_path)
 
+    # Optional gitignored local override.  This is intentionally loaded after
+    # the tracked dataset config so workstation-specific paths never need to be
+    # committed.  Default: configs/paths.local.yaml next to paths.yaml.
+    local_override = cfg.get("LOCAL_PATHS_CONFIG", "paths.local.yaml")
+    if local_override:
+        local_path = Path(_expand_path_value(local_override))
+        if not local_path.is_absolute():
+            local_path = yaml_path.parent / local_path
+        if local_path.exists():
+            with open(local_path, encoding="utf-8") as fh:
+                local_cfg = yaml.safe_load(fh) or {}
+            cfg.update(local_cfg)
+            logger.debug("Merged local paths override from %s", local_path)
+
+    # Environment variables have final precedence over tracked and local YAML.
+    _apply_env_overrides(cfg)
+
     return cfg
 
 
@@ -156,8 +214,11 @@ def resolve_project_paths(yaml_path: Path | None = None) -> ProjectPaths:
     """
     cfg = load_paths_config(yaml_path)
 
-    raw_root_str = cfg.get("RAW_DATASET_ROOT", "")
-    raw_root     = Path(raw_root_str).resolve() if raw_root_str else Path()
+    project_root = _resolve_project_root(cfg.get("PROJECT_ROOT", ""))
+
+    raw_root_str = _expand_path_value(cfg.get("RAW_DATASET_ROOT", ""))
+    raw_root_configured = bool(raw_root_str)
+    raw_root     = _resolve_path(raw_root_str, project_root) if raw_root_configured else Path()
 
     # Dataset name: explicit key wins, else infer from the last folder component
     # e.g. /path/to/PantsMini  →  "PantsMini"
@@ -166,14 +227,11 @@ def resolve_project_paths(yaml_path: Path | None = None) -> ProjectPaths:
         or (raw_root.name if raw_root.name else "unknown_dataset")
     )
 
-    project_root_str = cfg.get("PROJECT_ROOT", "")
-    project_root = Path(project_root_str).resolve() if project_root_str else _PROJECT_ROOT
-
     def _abs(relative_key: str, fallback: str = "") -> Path:
         """Resolve a relative-path config value against project_root."""
         val = cfg.get(relative_key, fallback)
-        p   = Path(val)
-        return p if p.is_absolute() else (project_root / p)
+        p   = Path(_expand_path_value(val))
+        return p.resolve() if p.is_absolute() else (project_root / p).resolve()
 
     # Dataset-specific output root:  outputs/<dataset_name>/
     output_root   = _abs("OUTPUT_ROOT", "outputs")
@@ -215,6 +273,7 @@ def resolve_project_paths(yaml_path: Path | None = None) -> ProjectPaths:
         thresholds_config            = _abs("THRESHOLDS_CONFIG", "configs/thresholds.yaml"),
         default_threshold_method     = str(cfg.get("DEFAULT_THRESHOLD_METHOD", "deterministic")).strip().lower(),
         paths_yaml                   = yaml_path or _DEFAULT_PATHS_YAML,
+        raw_dataset_root_configured  = raw_root_configured,
     )
 
 

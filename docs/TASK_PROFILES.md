@@ -56,10 +56,23 @@ decision authority.
 ## Confirmed Negative Lesion Cases
 
 For lesion-capable segmentation profiles (`pancreas_lesion` and
-`pancreas_lesion_subregions`), absent lesion supervision is allowed only when a
-run supplies explicit confirmed-negative provenance. Unconfirmed absent or empty
-lesion masks fail closed as `unconfirmed_negative_lesion`; they are not silently
-converted into valid negative training samples.
+`pancreas_lesion_subregions`), absent lesion supervision is allowed only with
+deterministic confirmed-negative provenance. A readable, geometry-valid empty
+separate lesion mask at
+`labelsTr/CASE_ID/segmentations/pancreatic_lesion.nii.gz` is sufficient
+provenance. A readable, geometry-valid nonempty separate lesion mask means lesion
+present. Missing, unreadable, incomplete, or geometry-invalid separate lesion
+masks mean insufficient evidence and fail closed.
+
+`combined_labels.nii.gz` and other shared multi-label annotations have no role in
+lesion presence, lesion absence, contradiction detection, review routing,
+scoring, or final decisions. They cannot confirm absence and cannot create
+separate-versus-shared lesion contradiction evidence.
+
+Missing, unreadable, incomplete, or geometry-invalid separate lesion masks fail
+closed as deterministic evidence (`unconfirmed_negative_lesion` or
+`lesion_annotation_insufficient_evidence`). They are not silently converted into
+valid negative training samples.
 
 Use the optional manifest argument in orchestrated runs:
 
@@ -88,7 +101,9 @@ Minimal manifest shape:
 ```
 
 The manifest is provenance for the dataset-curation task. It is not an external
-medical-correctness claim unless the source is a locked human/golden label.
+medical-correctness claim unless the source is a locked human/golden label. In
+current runs, manifest provenance does not replace the required separate lesion
+mask for lesion status.
 
 ## Visible Pancreas Profile
 

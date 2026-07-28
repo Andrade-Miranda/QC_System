@@ -9,6 +9,7 @@ venv/
 logs/
 outputs/
 configs/thresholds.calibrated.*
+configs/paths.local.yaml
 archive/generated/**/*.tar.gz
 *.nii
 *.nii.gz

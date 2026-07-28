@@ -34,6 +34,24 @@ python scripts/run_qc.py \
   --run-id RUN_ID
 ```
 
+Tracked configs do not contain workstation-specific raw dataset paths. Configure
+the local dataset root with either a gitignored override:
+
+```bash
+cp configs/paths.local.example.yaml configs/paths.local.yaml
+# edit RAW_DATASET_ROOT in configs/paths.local.yaml
+```
+
+or environment variables, which have highest precedence:
+
+```bash
+export AGENTQC_RAW_DATASET_ROOT="/absolute/path/to/PantsMini"
+```
+
+If `RAW_DATASET_ROOT` or required subdirectories are missing, validation fails
+closed before real-data runs. Do not commit `configs/paths.local.yaml` or raw
+medical data.
+
 Reuse is explicit and provenance-checked:
 
 ```bash

@@ -19,7 +19,10 @@ RAW_METADATA_FILE:   "metadata.xlsx"
 IMAGE_SUFFIX:        "_0000.nii.gz"
 
 # ── Project root (QC framework root — code lives here) ───────────────────────
-PROJECT_ROOT: "/home/gandrade-miranda/Documents/Code/Git_workspace/nnUNet/QC_System"
+# Empty means: infer the checked-out QC_System directory from this file.
+# Workstation-specific absolute paths belong in gitignored configs/paths.local.yaml
+# or environment variables (see configs/paths.local.example.yaml).
+PROJECT_ROOT: ""
 
 # ── Output root (relative to PROJECT_ROOT) ───────────────────────────────────
 # All dataset outputs are placed under:  <OUTPUT_ROOT>/<dataset_name>/<subdir>
@@ -38,3 +41,6 @@ SUMMARY_JSON_FILENAME: ""
 # ── Config file paths (relative to PROJECT_ROOT) ─────────────────────────────
 THRESHOLDS_CONFIG:             "configs/thresholds.yaml"
 DEFAULT_THRESHOLD_METHOD:      "deterministic"   # deterministic | calibrated
+
+# Optional gitignored local override, loaded after this file and dataset config.
+LOCAL_PATHS_CONFIG: "paths.local.yaml"

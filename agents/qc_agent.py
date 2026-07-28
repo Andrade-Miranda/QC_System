@@ -711,6 +711,7 @@ _FLAG_DOMAIN_MAP: dict[str, str] = {
     "lesion_mask_empty":                  "lesion_localization",
     "confirmed_negative_lesion":          "lesion_localization",
     "unconfirmed_negative_lesion":        "lesion_localization",
+    "lesion_annotation_insufficient_evidence": "lesion_localization",
     "required_target_missing":            "pancreas_context",
     # lesion_burden — lesion size plausibility
     "very_small_lesion":                  "lesion_burden",
@@ -1292,7 +1293,6 @@ def run_qc(
     # Determine effective task mode once for the whole dataset.
     # Passing `data` enables auto-detection when TASK_MODE="auto" (or absent).
     _dataset_task_mode = _get_task_mode(thr, data)
-    _confirmed_negatives = confirmed_negative_lesions or {}
 
     results: dict = {}
 
@@ -1404,6 +1404,8 @@ def run_qc(
         meta = d.get("metadata") or {}
         reg  = pan.get("regions") or {}
         rc   = pan.get("region_consistency") or {}
+        lesion_annotation_evidence = qc.get("lesion_annotation_evidence") or {}
+        lesion_annotation_status = lesion_annotation_evidence.get("status")
 
         pvol     = pan.get("volume_mm3") or 0.0
         total_lv = les.get("total_volume_mm3") or 0.0
@@ -1421,11 +1423,22 @@ def run_qc(
         pancreas_present = not bool(qc.get("pancreas_mask_empty")) and pvol > 0
         lesion_present   = not (qc.get("lesion_mask_empty") or
                                 (n_les == 0 and total_lv == 0))
-        negative_confirmation = (
-            _confirmed_negatives.get(case_id)
-            if _dataset_task_mode != "pancreas_only" and not lesion_present
-            else None
-        )
+        if _dataset_task_mode != "pancreas_only":
+            if lesion_annotation_status == "lesion_present":
+                lesion_present = True
+            elif lesion_annotation_status == "confirmed_absent":
+                lesion_present = False
+            elif lesion_annotation_status == "insufficient_evidence":
+                lesion_present = False
+        annotation_negative_confirmation = None
+        if _dataset_task_mode != "pancreas_only" and not lesion_present and lesion_annotation_status == "confirmed_absent":
+            annotation_negative_confirmation = {
+                "lesion_status": "confirmed_absent",
+                "confirmation_source": "valid_annotation_evidence",
+                "confirmed_by": "deterministic_annotation_reader",
+                "selected_source": lesion_annotation_evidence.get("selected_source"),
+            }
+        negative_confirmation = annotation_negative_confirmation
 
         # Record primary numeric evidence used by all downstream consumers
         evidence["pancreas_present"]      = pancreas_present
@@ -1433,12 +1446,15 @@ def run_qc(
         evidence["pancreas_volume_mm3"]   = pvol
         evidence["lesion_volume_mm3"]     = total_lv
         evidence["overlap_rate_vs_lesion"] = ov_rate
+        if lesion_annotation_evidence:
+            evidence["lesion_annotation_evidence"] = lesion_annotation_evidence
         if _dataset_task_mode != "pancreas_only" and not lesion_present:
             evidence["lesion_absence_confirmation"] = {
                 "status": "confirmed_absent" if negative_confirmation else "missing",
                 "confirmed": bool(negative_confirmation),
                 "source": (negative_confirmation or {}).get("confirmation_source"),
                 "confirmed_by": (negative_confirmation or {}).get("confirmed_by"),
+                "selected_source": (negative_confirmation or {}).get("selected_source"),
             }
         if _loa:
             evidence["hole_annotation_detected"] = _loa.get("hole_filling_changed_overlap", False)
@@ -1461,6 +1477,11 @@ def run_qc(
         )
         anatomical_validation_possible = pancreas_present
 
+        if _dataset_task_mode != "pancreas_only":
+            if lesion_annotation_status == "insufficient_evidence" and not lesion_present:
+                flags.append(("CRITICAL", "lesion_annotation_insufficient_evidence",
+                              "Lesion absence cannot be inferred from missing, unreadable, or invalid annotation evidence"))
+
         # Add task-aware flags (only for cases that need attention)
         if _dataset_task_mode == "pancreas_only":
             if not pancreas_present:
@@ -1469,12 +1490,12 @@ def run_qc(
         elif not lesion_present:
             if negative_confirmation:
                 flags.append(("INFO", "confirmed_negative_lesion",
-                               "Lesion absent with explicit confirmed-negative provenance"))
+                               "Lesion absent with deterministic confirmed-negative provenance"))
                 flags.append(("INFO", "lesion_mask_empty",
-                               "No lesion mask — explicitly confirmed negative sample"))
+                               "Lesion annotation contains zero lesion voxels with confirmed absence provenance"))
                 task_reasons = [
                     *task_reasons,
-                    "Lesion absence is explicitly confirmed by the supplied manifest",
+                    "Lesion absence is confirmed by valid annotation evidence",
                 ]
             else:
                 flags.append(("CRITICAL", "unconfirmed_negative_lesion",

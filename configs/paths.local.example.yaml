@@ -1,0 +1,9 @@
+# Example local path override. Copy to configs/paths.local.yaml (gitignored)
+# or use AGENTQC_* environment variables instead.
+
+# Local raw dataset location; required for real-data runs.
+RAW_DATASET_ROOT: "/absolute/path/to/PantsMini"
+
+# Optional local output/log roots. Relative paths resolve under PROJECT_ROOT.
+# OUTPUT_ROOT: "outputs"
+# LOGS_DIR: "logs"

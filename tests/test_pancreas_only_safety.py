@@ -111,7 +111,7 @@ class PancreasOnlySafetyTests(unittest.TestCase):
         self.assertEqual(emitted["measurements"]["pancreas_volume_mm3"], 50_000.0)
         self.assertEqual(emitted["hu_statistics"]["pancreas_median_hu"], 80.0)
 
-    def test_lesion_negative_requires_confirmation(self):
+    def test_lesion_negative_requires_separate_annotation_confirmation(self):
         raw_case = _case(pancreas_volume=50_000.0, pancreas_empty=False)
         result, emitted = _json_case(self.tmp_path, raw_case, "pancreas_lesion")
 
@@ -119,7 +119,7 @@ class PancreasOnlySafetyTests(unittest.TestCase):
         self.assertEqual(result["recommendation"], "exclude")
         self.assertIn("unconfirmed_negative_lesion", emitted["retrieval_tags"])
 
-        confirmed, confirmed_emitted = _json_case(
+        manifest_confirmed, _ = _json_case(
             self.tmp_path,
             raw_case,
             "pancreas_lesion",
@@ -130,6 +130,21 @@ class PancreasOnlySafetyTests(unittest.TestCase):
                     "confirmed_by": "test",
                 }
             },
+        )
+        self.assertEqual(manifest_confirmed["recommendation"], "exclude")
+
+        annotation_confirmed_case = _case(pancreas_volume=50_000.0, pancreas_empty=False)
+        annotation_confirmed_case["quality_control"]["lesion_annotation_evidence"] = {
+            "status": "confirmed_absent",
+            "selected_source": "separate_lesion_mask",
+            "lesion_present": False,
+            "absence_confirmed": True,
+            "sources": [],
+        }
+        confirmed, confirmed_emitted = _json_case(
+            self.tmp_path,
+            annotation_confirmed_case,
+            "pancreas_lesion",
         )
         self.assertEqual(confirmed["recommendation"], "keep")
         self.assertEqual(confirmed["decision_hint"], "keep_negative")

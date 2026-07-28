@@ -74,6 +74,7 @@ def _resolved_path_configuration(
         "raw_labels_dir": str(Path(paths.raw_labels_dir).resolve()),
         "raw_metadata": str(Path(paths.raw_metadata).resolve()),
         "image_suffix": paths.image_suffix,
+        "raw_dataset_root_configured": bool(getattr(paths, "raw_dataset_root_configured", True)),
         "summary_dir": str(Path(output_dirs.get("summary_dir", paths.summary_dir)).resolve()),
         "qc_dir": str(Path(output_dirs.get("qc_dir", paths.qc_dir)).resolve()),
         "logs_dir": str(Path(paths.logs_dir).resolve()),

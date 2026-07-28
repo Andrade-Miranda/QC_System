@@ -20,7 +20,6 @@ from artifacts.confirmed_negative_lesions import (
     load_confirmed_negative_lesions,
 )
 
-
 def _case_id_from_image(path: Path, suffix: str) -> str:
     name = path.name
     if suffix and name.endswith(suffix):
@@ -28,6 +27,49 @@ def _case_id_from_image(path: Path, suffix: str) -> str:
     if name.endswith(".nii.gz"):
         return name[:-7]
     return path.stem
+
+
+def _lesion_annotation_evidence(paths, img_path: Path, seg_dir: Path, task_mode: str) -> dict:
+    separate_path = seg_dir / "pancreatic_lesion.nii.gz"
+    try:
+        from scripts.summarize_dataset import (  # heavy NIfTI stack; import only when needed
+            build_lesion_annotation_evidence,
+            load_sitk_image,
+            sitk_to_uint8,
+        )
+    except ModuleNotFoundError as exc:
+        return {
+            "status": "insufficient_evidence",
+            "lesion_present": None,
+            "absence_confirmed": False,
+            "selected_source": None,
+            "sources": [{
+                "name": "separate_lesion_mask",
+                "path": str(separate_path),
+                "exists": separate_path.exists(),
+                "readable": False,
+                "geometry_valid": False,
+                "status": "dependency_unavailable",
+                "positive_voxels": None,
+                "lesion_present": None,
+            }],
+            "validation_error": f"nifti_dependency_unavailable:{exc.name}",
+        }
+
+    ref_sitk = load_sitk_image(img_path)
+    separate_sitk = load_sitk_image(separate_path)
+    separate_arr = sitk_to_uint8(separate_sitk) if separate_sitk is not None else None
+    evidence = build_lesion_annotation_evidence(
+        separate_path=separate_path,
+        separate_sitk=separate_sitk,
+        separate_arr=separate_arr,
+        ref_sitk=ref_sitk,
+        task_mode=task_mode,
+    )
+    if ref_sitk is None:
+        evidence["status"] = "insufficient_evidence"
+        evidence["validation_error"] = "ct_image_unreadable"
+    return evidence
 
 
 def validate_dataset(
@@ -39,6 +81,9 @@ def validate_dataset(
 ) -> dict:
     required = required_segmentations(profile)
     errors: list[str] = []
+    raw_root_configured = getattr(paths, "raw_dataset_root_configured", True)
+    if not raw_root_configured:
+        errors.append("RAW_DATASET_ROOT is not configured")
     if not paths.raw_root.exists():
         errors.append(f"RAW_DATASET_ROOT not found: {paths.raw_root}")
     if not paths.raw_images_dir.exists():
@@ -64,22 +109,20 @@ def validate_dataset(
             "error": str(exc),
         }
         errors.append(f"invalid_confirmed_negative_lesions:{exc}")
-    confirmed_cases = set(confirmed_negatives.get("case_ids") or [])
     cases: dict[str, dict] = {}
     for img_path in image_paths:
         case_id = _case_id_from_image(img_path, paths.image_suffix)
         seg_dir = paths.raw_labels_dir / case_id / "segmentations"
         missing = []
         missing_confirmed_negative = []
+        lesion_evidence = None
         for seg_key, seg_name in required.items():
+            if seg_key == "lesion_mask" and is_lesion_task_mode(task_mode):
+                lesion_evidence = _lesion_annotation_evidence(paths, img_path, seg_dir, task_mode)
             if (seg_dir / seg_name).exists():
-                continue
-            if (
-                seg_key == "lesion_mask"
-                and is_lesion_task_mode(task_mode)
-                and case_id in confirmed_cases
-            ):
-                missing_confirmed_negative.append(seg_name)
+                if seg_key == "lesion_mask" and is_lesion_task_mode(task_mode):
+                    if lesion_evidence.get("status") not in {"lesion_present", "confirmed_absent"}:
+                        missing.append("insufficient_lesion_annotation_evidence")
                 continue
             missing.append(seg_name)
         case_errors = []
@@ -91,6 +134,7 @@ def validate_dataset(
             "omit_from_training": bool(case_errors),
             "errors": case_errors,
             "confirmed_negative_lesion": confirmation,
+            "lesion_annotation_evidence": lesion_evidence,
             "missing_segmentations_covered_by_confirmation": missing_confirmed_negative,
             "resources": {
                 "image": resource_descriptor(img_path, "image", required=True),
