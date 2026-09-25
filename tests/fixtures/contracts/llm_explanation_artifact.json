@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "artifact_type": "llm_explanation_artifact",
+    "artifact_schema_version": "1.0",
+    "generator": "LLMExplanationAgent",
+    "generator_version": "1.0",
+    "created_at": "2026-07-30T11:11:31Z",
+    "run_id": "run-1",
+    "artifact_id": "fixture-llm-explanation",
+    "dataset_name": "PantsMini",
+    "task_mode": "pancreas_only",
+    "input_resources": [],
+    "input_artifacts": [
+      {
+        "artifact_type": "final_qc_decisions",
+        "path": "final_qc_decisions.json",
+        "exists": true,
+        "sha256": "fixture"
+      }
+    ],
+    "configuration": {},
+    "software_version": {},
+    "determinism": {
+      "random_seed": 0,
+      "nondeterministic_components": ["optional local LLM text generation; validated as nonbinding"]
+    }
+  },
+  "data": {
+    "status": "complete",
+    "adapter": {
+      "name": "Evidence Abstraction Adapter",
+      "notation": "A_tau",
+      "deterministic": true,
+      "learned": false,
+      "extracts_new_evidence": false
+    },
+    "validator": {
+      "name": "strict output-grounding validator",
+      "notation": "C_tau"
+    },
+    "backend": {
+      "provider": "ollama",
+      "model": "devstral:latest",
+      "temperature": 0,
+      "top_p": 1,
+      "seed": 0,
+      "context_length": null,
+      "max_tokens": 512
+    },
+    "task": {
+      "scientific_task_name": "pancreas-segmentation task",
+      "task_notation": "tau_P",
+      "implementation_task_id": "pancreas_only"
+    },
+    "authority_boundary": {
+      "deterministic_policy_symbol": "pi_tau",
+      "final_policy_action_source": "final_qc_decisions.json",
+      "adapter_may_change_policy": false,
+      "adapter_may_change_routing": false,
+      "adapter_may_change_scores": false,
+      "adapter_may_extract_new_evidence": false,
+      "llm_output_is_nonbinding": true
+    },
+    "alignment": {
+      "case_count": 1,
+      "requested_case_count": 1
+    },
+    "cases": {
+      "case_001": {
+        "case_id": "case_001",
+        "compact_input": {
+          "schema_version": "1.0",
+          "case_id": "case_001",
+          "scientific_task_name": "pancreas-segmentation task",
+          "task_notation": "tau_P",
+          "implementation_task_id": "pancreas_only",
+          "observed_final_policy_action": "review",
+          "observed_deterministic_recommendation": "keep_with_metadata_warning",
+          "observed_calibrated_recommendation": "keep_with_metadata_warning",
+          "route_to_review": true,
+          "route_reasons": ["partial_visible_target_annotation_uncertain"],
+          "decision_basis": "review_routing",
+          "risk_level": "low",
+          "primary_domain": "metadata_completeness",
+          "primary_failure_mode": "missing_metadata",
+          "unresolved_evidence": [],
+          "relevant_measurements": {
+            "pancreas_volume_mm3": 100.0,
+            "lesion_presence": "not_applicable"
+          },
+          "visualization_status": "unknown",
+          "visualization_error": null,
+          "provenance_reference_ids": [
+            {
+              "reference_id": "final",
+              "artifact_type": "final_qc_decisions",
+              "artifact_filename": "final_qc_decisions.json",
+              "artifact_id": "final-id",
+              "json_pointer": "/data/decisions/case_001"
+            }
+          ]
+        },
+        "rendered_prompt": [
+          {"role": "system", "content": "You are the advisory explanation component of AgentQC."},
+          {"role": "user", "content": "{}"}
+        ],
+        "raw_response": "{\"case_id\":\"case_001\"}",
+        "parsed_response": {
+          "case_id": "case_001",
+          "evidence_summary": "Compact evidence reports review.",
+          "reason_for_review_or_action": "Review routing is present.",
+          "unresolved_items": [],
+          "possible_consistency_questions": [],
+          "limitations": ["Nonbinding."],
+          "explicit_statement_that_deterministic_policy_is_authoritative": "The deterministic policy is authoritative."
+        },
+        "validation_result": {
+          "usable_for_reporting": true,
+          "status": "passed",
+          "errors": []
+        },
+        "fallback_response": null,
+        "reported_response": {
+          "case_id": "case_001",
+          "evidence_summary": "Compact evidence reports review.",
+          "reason_for_review_or_action": "Review routing is present.",
+          "unresolved_items": [],
+          "possible_consistency_questions": [],
+          "limitations": ["Nonbinding."],
+          "explicit_statement_that_deterministic_policy_is_authoritative": "The deterministic policy is authoritative."
+        },
+        "execution_timestamp": "2026-07-30T11:11:31Z",
+        "provider": "ollama",
+        "model": "devstral:latest",
+        "decoding_parameters": {
+          "temperature": 0,
+          "top_p": 1,
+          "seed": 0,
+          "context_length": null,
+          "max_tokens": 512
+        },
+        "nonbinding": true
+      }
+    },
+    "limitations": ["Optional explanatory artifact only; not consumed by routing or final policy."]
+  }
+}

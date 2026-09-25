@@ -54,14 +54,26 @@ def load_schema(schema: str | Path) -> dict[str, Any]:
 def validate_artifact(instance: Any, schema: str | Path) -> None:
     """Validate an artifact and raise one readable error containing all issues."""
     jsonschema = _jsonschema()
+    try:
+        from referencing import Registry, Resource
+    except ImportError as exc:
+        raise JsonSchemaUnavailableError(
+            "Artifact validation requires the optional 'referencing' package installed with jsonschema."
+        ) from exc
     path = schema_path(schema).resolve()
     contract = load_schema(path)
     validator_class = jsonschema.validators.validator_for(contract)
     validator_class.check_schema(contract)
-    resolver = jsonschema.RefResolver(base_uri=path.as_uri(), referrer=contract)
+    resources = []
+    for schema_file in SCHEMA_DIRECTORY.glob("*.schema.json"):
+        raw_schema = load_schema(schema_file)
+        resource = Resource.from_contents(raw_schema)
+        resources.append((schema_file.resolve().as_uri(), resource))
+        resources.append((schema_file.name, resource))
+    registry = Registry().with_resources(resources)
     validator = validator_class(
         contract,
-        resolver=resolver,
+        registry=registry,
         format_checker=jsonschema.FormatChecker(),
     )
     errors = sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))

@@ -1,0 +1,9 @@
+evidence_domain,stable_n,stable_N,stable_percent,profile_changing_n,profile_changing_N,profile_changing_percent
+geometry_integrity,106,507,20.9,9,493,1.8
+fov_integrity,75,507,14.8,208,493,42.2
+pancreas_context,56,507,11.0,57,493,11.6
+lesion_localization,5,507,1.0,60,493,12.2
+lesion_burden,0,507,0.0,12,493,2.4
+region_consistency,37,507,7.3,210,493,42.6
+attenuation_integrity,20,507,3.9,100,493,20.3
+metadata_completeness,298,507,58.8,348,493,70.6

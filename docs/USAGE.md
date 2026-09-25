@@ -144,6 +144,24 @@ and rendering remain authoritative. Reviewer logging is off by default; use
 `--log` only under an approved operational policy. External OpenAI intent
 classification requires `--allow-external-provider`.
 
+## Optional LLM Explanations
+
+Generate a nonbinding, task-aware explanation artifact from compact validated
+evidence without sending complete QC reports to the model:
+
+```bash
+python scripts/explain_qc_run.py \
+  --run-dir "$RUN_DIR" \
+  --case PanTS_00007001 \
+  --provider ollama
+```
+
+This writes `llm_explanation_artifact.json`. The Evidence Abstraction Adapter
+supports `pancreas_only`, `pancreas_lesion`, and
+`pancreas_lesion_subregions`. The deterministic policy remains authoritative;
+invalid or unavailable LLM output triggers a deterministic fallback and does not
+change routing or final actions. See `docs/LLM_EXPLANATIONS.md`.
+
 ## Launcher
 
 `scripts/qc_commands.sh` exposes shortcuts for the same active surfaces:

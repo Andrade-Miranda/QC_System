@@ -25,6 +25,11 @@ class ProviderConfig:
     max_tokens: int
     base_url: str | None = None
     api_key_env: str | None = None
+    temperature: float = 0.0
+    top_p: float = 1.0
+    seed: int | None = 0
+    context_length: int | None = None
+    extended_ollama_options: bool = False
 
 
 class ChatBackend:
@@ -54,10 +59,16 @@ class OllamaBackend(ChatBackend):
             "messages": messages,
             "stream": False,
             "options": {
-                "temperature": 0,
+                "temperature": self.config.temperature,
                 "num_predict": self.config.max_tokens,
             },
         }
+        if self.config.extended_ollama_options:
+            payload["options"]["top_p"] = self.config.top_p
+        if self.config.extended_ollama_options and self.config.seed is not None:
+            payload["options"]["seed"] = self.config.seed
+        if self.config.extended_ollama_options and self.config.context_length is not None:
+            payload["options"]["num_ctx"] = self.config.context_length
         response = _post_json(endpoint, payload, self.config.timeout_seconds)
         content = ((response.get("message") or {}).get("content")) if isinstance(response, dict) else None
         if not isinstance(content, str) or not content.strip():
@@ -135,13 +146,25 @@ def load_provider_config(path: Path, provider_override: str | None = None) -> Pr
         raise ProviderError(f"Unsupported LLM provider: {provider}")
     timeout = agent.get("timeout_seconds", raw.get("timeout_seconds", 20))
     max_tokens = agent.get("max_tokens", 512)
+    temperature = agent.get("temperature", raw.get("temperature", 0))
+    top_p = agent.get("top_p", raw.get("top_p", 1))
+    seed = agent.get("seed", raw.get("seed", 0))
+    context_length = agent.get("context_length", raw.get("context_length"))
     try:
         timeout_value = float(timeout)
         max_tokens_value = int(max_tokens)
+        temperature_value = float(temperature)
+        top_p_value = float(top_p)
+        seed_value = None if seed is None else int(seed)
+        context_length_value = None if context_length is None else int(context_length)
     except (TypeError, ValueError) as exc:
-        raise ProviderError("LLM timeout and max_tokens must be numeric") from exc
+        raise ProviderError("LLM decoding configuration values must be numeric") from exc
     if timeout_value <= 0 or max_tokens_value <= 0:
         raise ProviderError("LLM timeout and max_tokens must be positive")
+    if not 0 <= temperature_value <= 2 or not 0 < top_p_value <= 1:
+        raise ProviderError("LLM temperature and top_p are outside supported ranges")
+    if context_length_value is not None and context_length_value <= 0:
+        raise ProviderError("LLM context_length must be positive when configured")
     section = raw.get(provider) or {}
     if not isinstance(section, dict):
         raise ProviderError(f"{provider} configuration must be a mapping")
@@ -164,6 +187,10 @@ def load_provider_config(path: Path, provider_override: str | None = None) -> Pr
         max_tokens=max_tokens_value,
         base_url=base_url,
         api_key_env=api_key_env,
+        temperature=temperature_value,
+        top_p=top_p_value,
+        seed=seed_value,
+        context_length=context_length_value,
     )
 
 

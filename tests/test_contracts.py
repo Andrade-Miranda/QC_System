@@ -125,6 +125,7 @@ class ContractTests(unittest.TestCase):
         authority_fields = {
             "reasoning_artifact": ("route_to_review", True),
             "medical_critique": ("blocks_automatic_keep", False),
+            "llm_explanation_artifact": ("decision_override", "keep"),
         }
         for schema_name, (field, value) in authority_fields.items():
             fixture_path = FIXTURE_DIR / f"{schema_name}.json"

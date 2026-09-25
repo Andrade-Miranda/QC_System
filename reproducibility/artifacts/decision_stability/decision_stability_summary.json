@@ -1,0 +1,310 @@
+{
+  "aligned_case_count": 1000,
+  "all_three_profiles": {
+    "changed_action_at_least_one_profile": 493,
+    "denominator": 1000,
+    "same_action": 507
+  },
+  "experiment_id": "decision_stability_REPRODUCTION_20260917",
+  "interpretation_boundary": "Artifact differences only; not medical correctness, expert agreement, or downstream utility.",
+  "pairwise": {
+    "tau_L_to_tau_S": {
+      "changed_action": 226,
+      "changed_rate": 0.226,
+      "same_action": 774,
+      "top_factors_among_changed_actions": [
+        {
+          "case_count": 226,
+          "denominator": 226,
+          "factor": "evidence_becomes_task_relevant"
+        },
+        {
+          "case_count": 226,
+          "denominator": 226,
+          "factor": "routing_changed"
+        },
+        {
+          "case_count": 226,
+          "denominator": 226,
+          "factor": "triggered_policy_rules_changed"
+        },
+        {
+          "case_count": 226,
+          "denominator": 226,
+          "factor": "decision_basis_changed"
+        },
+        {
+          "case_count": 226,
+          "denominator": 226,
+          "factor": "explanation_artifact_changed"
+        },
+        {
+          "case_count": 226,
+          "denominator": 226,
+          "factor": "critique_artifact_changed"
+        },
+        {
+          "case_count": 224,
+          "denominator": 226,
+          "factor": "evidence_introduced"
+        },
+        {
+          "case_count": 221,
+          "denominator": 226,
+          "factor": "primary_domain_changed"
+        }
+      ],
+      "top_specific_mechanisms_among_changed_actions": [
+        {
+          "case_count": 226,
+          "denominator": 226,
+          "mechanism": "task-relevant domain: region_consistency"
+        },
+        {
+          "case_count": 223,
+          "denominator": 226,
+          "mechanism": "routing: entered review"
+        },
+        {
+          "case_count": 202,
+          "denominator": 226,
+          "mechanism": "basis: calibrated_qc -> review_routing"
+        },
+        {
+          "case_count": 150,
+          "denominator": 226,
+          "mechanism": "changed shared domain: metadata_completeness"
+        },
+        {
+          "case_count": 37,
+          "denominator": 226,
+          "mechanism": "changed shared domain: fov_integrity"
+        },
+        {
+          "case_count": 24,
+          "denominator": 226,
+          "mechanism": "changed shared domain: lesion_localization"
+        },
+        {
+          "case_count": 21,
+          "denominator": 226,
+          "mechanism": "basis: deterministic_hard_failure -> review_routing"
+        },
+        {
+          "case_count": 21,
+          "denominator": 226,
+          "mechanism": "status: left hard failure"
+        },
+        {
+          "case_count": 3,
+          "denominator": 226,
+          "mechanism": "basis: review_routing -> deterministic_hard_failure"
+        },
+        {
+          "case_count": 3,
+          "denominator": 226,
+          "mechanism": "routing: left review"
+        }
+      ]
+    },
+    "tau_P_to_tau_L": {
+      "changed_action": 350,
+      "changed_rate": 0.35,
+      "same_action": 650,
+      "top_factors_among_changed_actions": [
+        {
+          "case_count": 350,
+          "denominator": 350,
+          "factor": "evidence_becomes_task_relevant"
+        },
+        {
+          "case_count": 350,
+          "denominator": 350,
+          "factor": "evidence_introduced"
+        },
+        {
+          "case_count": 350,
+          "denominator": 350,
+          "factor": "triggered_policy_rules_changed"
+        },
+        {
+          "case_count": 350,
+          "denominator": 350,
+          "factor": "decision_basis_changed"
+        },
+        {
+          "case_count": 261,
+          "denominator": 350,
+          "factor": "routing_changed"
+        },
+        {
+          "case_count": 156,
+          "denominator": 350,
+          "factor": "primary_domain_changed"
+        },
+        {
+          "case_count": 156,
+          "denominator": 350,
+          "factor": "explanation_artifact_changed"
+        },
+        {
+          "case_count": 156,
+          "denominator": 350,
+          "factor": "critique_artifact_changed"
+        }
+      ],
+      "top_specific_mechanisms_among_changed_actions": [
+        {
+          "case_count": 350,
+          "denominator": 350,
+          "mechanism": "task-relevant domain: lesion_burden"
+        },
+        {
+          "case_count": 350,
+          "denominator": 350,
+          "mechanism": "task-relevant domain: lesion_localization"
+        },
+        {
+          "case_count": 209,
+          "denominator": 350,
+          "mechanism": "routing: left review"
+        },
+        {
+          "case_count": 195,
+          "denominator": 350,
+          "mechanism": "basis: review_routing -> calibrated_qc"
+        },
+        {
+          "case_count": 98,
+          "denominator": 350,
+          "mechanism": "changed shared domain: attenuation_integrity"
+        },
+        {
+          "case_count": 76,
+          "denominator": 350,
+          "mechanism": "changed shared domain: metadata_completeness"
+        },
+        {
+          "case_count": 52,
+          "denominator": 350,
+          "mechanism": "basis: deterministic_hard_failure -> calibrated_qc"
+        },
+        {
+          "case_count": 52,
+          "denominator": 350,
+          "mechanism": "changed shared domain: pancreas_context"
+        },
+        {
+          "case_count": 52,
+          "denominator": 350,
+          "mechanism": "status: left hard failure"
+        },
+        {
+          "case_count": 52,
+          "denominator": 350,
+          "mechanism": "basis: calibrated_qc -> review_routing"
+        }
+      ]
+    },
+    "tau_P_to_tau_S": {
+      "changed_action": 429,
+      "changed_rate": 0.429,
+      "same_action": 571,
+      "top_factors_among_changed_actions": [
+        {
+          "case_count": 429,
+          "denominator": 429,
+          "factor": "evidence_becomes_task_relevant"
+        },
+        {
+          "case_count": 429,
+          "denominator": 429,
+          "factor": "evidence_introduced"
+        },
+        {
+          "case_count": 429,
+          "denominator": 429,
+          "factor": "triggered_policy_rules_changed"
+        },
+        {
+          "case_count": 429,
+          "denominator": 429,
+          "factor": "decision_basis_changed"
+        },
+        {
+          "case_count": 357,
+          "denominator": 429,
+          "factor": "routing_changed"
+        },
+        {
+          "case_count": 296,
+          "denominator": 429,
+          "factor": "primary_domain_changed"
+        },
+        {
+          "case_count": 296,
+          "denominator": 429,
+          "factor": "explanation_artifact_changed"
+        },
+        {
+          "case_count": 296,
+          "denominator": 429,
+          "factor": "critique_artifact_changed"
+        }
+      ],
+      "top_specific_mechanisms_among_changed_actions": [
+        {
+          "case_count": 429,
+          "denominator": 429,
+          "mechanism": "task-relevant domain: lesion_burden"
+        },
+        {
+          "case_count": 429,
+          "denominator": 429,
+          "mechanism": "task-relevant domain: lesion_localization"
+        },
+        {
+          "case_count": 377,
+          "denominator": 429,
+          "mechanism": "task-relevant domain: region_consistency"
+        },
+        {
+          "case_count": 210,
+          "denominator": 429,
+          "mechanism": "basis: calibrated_qc -> review_routing"
+        },
+        {
+          "case_count": 210,
+          "denominator": 429,
+          "mechanism": "routing: entered review"
+        },
+        {
+          "case_count": 177,
+          "denominator": 429,
+          "mechanism": "changed shared domain: metadata_completeness"
+        },
+        {
+          "case_count": 147,
+          "denominator": 429,
+          "mechanism": "routing: left review"
+        },
+        {
+          "case_count": 134,
+          "denominator": 429,
+          "mechanism": "basis: review_routing -> calibrated_qc"
+        },
+        {
+          "case_count": 98,
+          "denominator": 429,
+          "mechanism": "changed shared domain: attenuation_integrity"
+        },
+        {
+          "case_count": 52,
+          "denominator": 429,
+          "mechanism": "basis: deterministic_hard_failure -> calibrated_qc"
+        }
+      ]
+    }
+  },
+  "schema_version": "1.0"
+}

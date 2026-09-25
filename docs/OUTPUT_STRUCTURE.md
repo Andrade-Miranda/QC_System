@@ -42,6 +42,7 @@ RUN_DIR/
   final_qc_decisions.json
   final_qc_decisions.csv
   eval_report.json
+  llm_explanation_artifact.json          # optional nonbinding explanation output
   execution_graph.json
   run_manifest.json
 ```
@@ -73,6 +74,11 @@ RUN_DIR/
 Only `golden_review_package/reviewer_package/` is suitable for reviewer
 distribution. `system_reference.csv`, run artifacts, policy traces, and system
 actions are administrative data and must remain blinded during review.
+
+`llm_explanation_artifact.json` is optional and nonbinding. It stores compact
+evidence inputs, rendered prompts, raw responses, parsed responses, validation
+results, and deterministic fallbacks when needed. It is not consumed by routing,
+scoring, thresholds, task semantics, or final policy.
 
 Do not treat shared summary folders, ad hoc report paths, or archived workflow
 layouts as the source of truth for a completed run.

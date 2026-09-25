@@ -102,11 +102,20 @@ class ReviewerResource:
 class RunArtifactIndex:
     """Read-only index whose loaded fields are constrained by its mode."""
 
-    def __init__(self, root: Path, mode: str):
+    def __init__(
+        self,
+        root: Path,
+        mode: str,
+        *,
+        allowed_task_modes: set[str] | None = None,
+        verify_pancreas_policy: bool = True,
+    ):
         resolved = Path(root).expanduser().resolve()
         self.run_dir: Path | None = resolved if mode == "admin" else None
         self.package_dir: Path | None = resolved if mode == "reviewer" else None
         self.mode = mode
+        self.allowed_task_modes = allowed_task_modes
+        self.verify_pancreas_policy = verify_pancreas_policy
         self.artifacts: dict[str, dict[str, Any]] = {}
         self.metadata: dict[str, dict[str, Any]] = {}
         self.case_maps: dict[str, dict[str, Any]] = {}
@@ -123,10 +132,22 @@ class RunArtifactIndex:
         self._aliases: dict[str, str] = {}
 
     @classmethod
-    def load(cls, root: Path, mode: str) -> "RunArtifactIndex":
+    def load(
+        cls,
+        root: Path,
+        mode: str,
+        *,
+        allowed_task_modes: set[str] | None = None,
+        verify_pancreas_policy: bool = True,
+    ) -> "RunArtifactIndex":
         if mode not in {"admin", "reviewer"}:
             raise RunArtifactError(f"Unsupported mode: {mode}")
-        index = cls(root, mode)
+        index = cls(
+            root,
+            mode,
+            allowed_task_modes=allowed_task_modes,
+            verify_pancreas_policy=verify_pancreas_policy,
+        )
         selected_root = index.package_dir if mode == "reviewer" else index.run_dir
         if selected_root is None or not selected_root.is_dir():
             raise RunArtifactError(f"{mode.title()} root directory does not exist: {selected_root}")
@@ -137,8 +158,19 @@ class RunArtifactIndex:
         return index
 
     @classmethod
-    def load_admin(cls, run_dir: Path) -> "RunArtifactIndex":
-        return cls.load(run_dir, "admin")
+    def load_admin(
+        cls,
+        run_dir: Path,
+        *,
+        allowed_task_modes: set[str] | None = None,
+        verify_pancreas_policy: bool = True,
+    ) -> "RunArtifactIndex":
+        return cls.load(
+            run_dir,
+            "admin",
+            allowed_task_modes=allowed_task_modes,
+            verify_pancreas_policy=verify_pancreas_policy,
+        )
 
     @classmethod
     def load_reviewer(cls, review_package: Path) -> "RunArtifactIndex":
@@ -271,9 +303,14 @@ class RunArtifactIndex:
                 raise RunArtifactError(
                     f"validated_run_context.json data/metadata mismatch for {field}"
                 )
-        if identity["task_mode"] != "pancreas_only":
+        allowed = self.allowed_task_modes or {"pancreas_only"}
+        if identity["task_mode"] not in allowed:
+            if self.allowed_task_modes is None:
+                raise RunArtifactError(
+                    "Admin interactive review currently supports pancreas_only runs only"
+                )
             raise RunArtifactError(
-                "Admin interactive review currently supports pancreas_only runs only"
+                "Admin artifact index does not support this task mode for the requested consumer"
             )
 
         raw_case_ids = context_data.get("case_ids")
@@ -327,7 +364,8 @@ class RunArtifactIndex:
         self._verify_input_artifact_hashes()
         self._set_aliases(reference)
         self._load_admin_golden(identity, reference)
-        self._load_policy()
+        if identity["task_mode"] == "pancreas_only" and self.verify_pancreas_policy:
+            self._load_policy()
 
     def _verify_input_artifact_hashes(self) -> None:
         by_type = {

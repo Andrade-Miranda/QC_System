@@ -1,0 +1,46 @@
+{
+  "decision_stability": {
+    "aligned_case_count": 1000,
+    "stable_cases": 507,
+    "changed_cases": 493,
+    "pairwise_changed": {
+      "tau_P_to_tau_L": 350,
+      "tau_P_to_tau_S": 429,
+      "tau_L_to_tau_S": 226
+    },
+    "action_counts": {
+      "tau_P": {"keep": 227, "warning": 344, "review": 373, "reject": 56},
+      "tau_L": {"keep": 281, "warning": 448, "review": 216, "reject": 55},
+      "tau_S": {"keep": 229, "warning": 298, "review": 436, "reject": 37}
+    }
+  },
+  "evidence_domains": {
+    "stable_n": 507,
+    "task_changing_n": 493,
+    "percentages": {
+      "geometry_integrity": {"stable": 20.9, "task_changing": 1.8},
+      "fov_integrity": {"stable": 14.8, "task_changing": 42.2},
+      "pancreas_context": {"stable": 11.0, "task_changing": 11.6},
+      "lesion_localization": {"stable": 1.0, "task_changing": 12.2},
+      "lesion_burden": {"stable": 0.0, "task_changing": 2.4},
+      "region_consistency": {"stable": 7.3, "task_changing": 42.6},
+      "attenuation_integrity": {"stable": 3.9, "task_changing": 20.3},
+      "metadata_completeness": {"stable": 58.8, "task_changing": 70.6}
+    }
+  },
+  "representative_cases": {
+    "PanTS_00007012": {"transition": "tau_L keep -> tau_S review"},
+    "PanTS_00007024": {"transition": "tau_L warning -> tau_S review"},
+    "PanTS_00007053": {"transition": "tau_P warning -> tau_L review"}
+  },
+  "reasoning_critic_audit": {
+    "case_profile_records": 3000,
+    "reasoning_coverage": 3000,
+    "medical_critic_coverage": 3000,
+    "reasoning_grounding_checks": 57000,
+    "supported_critique_checks": 45000,
+    "unsupported_critique_claims": 0,
+    "reasoning_non_interference": 3000,
+    "critique_non_interference": 3000
+  }
+}

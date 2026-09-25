@@ -8,6 +8,7 @@ __pycache__/
 venv/
 logs/
 outputs/
+reproducibility/outputs/
 configs/thresholds.calibrated.*
 configs/paths.local.yaml
 archive/generated/**/*.tar.gz

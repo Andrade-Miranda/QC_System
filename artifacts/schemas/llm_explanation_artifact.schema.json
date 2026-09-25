@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "llm_explanation_artifact.schema.json",
+  "title": "Nonbinding LLM explanation artifact",
+  "allOf": [
+    {"$ref": "common_artifact_envelope.schema.json"},
+    {"$ref": "#/$defs/nonAuthorityValue"},
+    {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "properties": {"artifact_type": {"const": "llm_explanation_artifact"}}
+        },
+        "data": {"$ref": "#/$defs/data"}
+      }
+    }
+  ],
+  "$defs": {
+    "nonAuthorityValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^(?!(?:.*_)?(?:decision_override|new_decision|recommended_action|routing_override|route_override|score_override|policy_override|threshold_override)(?:_|$)).+$"
+          },
+          "additionalProperties": {"$ref": "#/$defs/nonAuthorityValue"}
+        },
+        {"type": "array", "items": {"$ref": "#/$defs/nonAuthorityValue"}},
+        {"type": ["string", "number", "boolean", "null"]}
+      ]
+    },
+    "task": {
+      "type": "object",
+      "required": ["scientific_task_name", "task_notation", "implementation_task_id"],
+      "properties": {
+        "scientific_task_name": {"type": "string", "minLength": 1},
+        "task_notation": {"type": "string", "enum": ["tau_P", "tau_L", "tau_S"]},
+        "implementation_task_id": {
+          "type": "string",
+          "enum": ["pancreas_only", "pancreas_lesion", "pancreas_lesion_subregions"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "caseExplanation": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "compact_input",
+        "rendered_prompt",
+        "raw_response",
+        "parsed_response",
+        "validation_result",
+        "fallback_response",
+        "reported_response",
+        "execution_timestamp",
+        "provider",
+        "model",
+        "decoding_parameters",
+        "nonbinding"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "compact_input": {
+          "type": "object",
+          "required": [
+            "schema_version",
+            "case_id",
+            "scientific_task_name",
+            "task_notation",
+            "implementation_task_id",
+            "observed_final_policy_action",
+            "observed_deterministic_recommendation",
+            "observed_calibrated_recommendation",
+            "route_to_review",
+            "route_reasons",
+            "decision_basis",
+            "risk_level",
+            "primary_domain",
+            "primary_failure_mode",
+            "unresolved_evidence",
+            "relevant_measurements",
+            "visualization_status",
+            "visualization_error",
+            "provenance_reference_ids"
+          ],
+          "properties": {
+            "schema_version": {"type": "string"},
+            "case_id": {"type": "string"},
+            "scientific_task_name": {"type": "string"},
+            "task_notation": {"type": "string", "enum": ["tau_P", "tau_L", "tau_S"]},
+            "implementation_task_id": {
+              "type": "string",
+              "enum": ["pancreas_only", "pancreas_lesion", "pancreas_lesion_subregions"]
+            },
+            "observed_final_policy_action": {"type": ["string", "null"]},
+            "observed_deterministic_recommendation": {"type": ["string", "null"]},
+            "observed_calibrated_recommendation": {"type": ["string", "null"]},
+            "route_to_review": {"type": ["boolean", "null"]},
+            "route_reasons": {"type": "array", "items": {"type": "string"}},
+            "decision_basis": {"type": ["string", "null"]},
+            "risk_level": {"type": ["string", "null"]},
+            "primary_domain": {"type": ["string", "null"]},
+            "primary_failure_mode": {"type": ["string", "null"]},
+            "unresolved_evidence": {"type": "array"},
+            "relevant_measurements": {"type": "object"},
+            "visualization_status": {"type": "string"},
+            "visualization_error": {"type": ["string", "null"]},
+            "provenance_reference_ids": {"type": "array", "items": {"type": "object"}}
+          },
+          "additionalProperties": true
+        },
+        "rendered_prompt": {"type": "array", "items": {"type": "object"}},
+        "raw_response": {"type": ["string", "null"]},
+        "parsed_response": {"type": ["object", "null"]},
+        "validation_result": {
+          "type": "object",
+          "required": ["usable_for_reporting", "status", "errors"],
+          "properties": {
+            "usable_for_reporting": {"type": "boolean"},
+            "status": {"type": "string", "enum": ["passed", "failed", "not_run"]},
+            "errors": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        },
+        "fallback_response": {"type": ["object", "null"]},
+        "reported_response": {"type": "object"},
+        "execution_timestamp": {"type": "string", "format": "date-time"},
+        "provider": {"type": "string"},
+        "model": {"type": ["string", "null"]},
+        "decoding_parameters": {"type": "object"},
+        "nonbinding": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "required": ["status", "adapter", "validator", "backend", "task", "authority_boundary", "alignment", "cases", "limitations"],
+      "properties": {
+        "status": {"type": "string", "enum": ["complete", "partial", "failed_validation", "provider_unavailable"]},
+        "adapter": {
+          "type": "object",
+          "required": ["name", "notation", "deterministic", "learned", "extracts_new_evidence"],
+          "properties": {
+            "name": {"const": "Evidence Abstraction Adapter"},
+            "notation": {"const": "A_tau"},
+            "deterministic": {"const": true},
+            "learned": {"const": false},
+            "extracts_new_evidence": {"const": false}
+          },
+          "additionalProperties": false
+        },
+        "validator": {"type": "object"},
+        "backend": {"type": "object"},
+        "task": {"$ref": "#/$defs/task"},
+        "authority_boundary": {
+          "type": "object",
+          "required": [
+            "deterministic_policy_symbol",
+            "final_policy_action_source",
+            "adapter_may_change_policy",
+            "adapter_may_change_routing",
+            "adapter_may_change_scores",
+            "adapter_may_extract_new_evidence",
+            "llm_output_is_nonbinding"
+          ],
+          "properties": {
+            "deterministic_policy_symbol": {"const": "pi_tau"},
+            "final_policy_action_source": {"const": "final_qc_decisions.json"},
+            "adapter_may_change_policy": {"const": false},
+            "adapter_may_change_routing": {"const": false},
+            "adapter_may_change_scores": {"const": false},
+            "adapter_may_extract_new_evidence": {"const": false},
+            "llm_output_is_nonbinding": {"const": true}
+          },
+          "additionalProperties": false
+        },
+        "alignment": {"type": "object"},
+        "cases": {"type": "object", "additionalProperties": {"$ref": "#/$defs/caseExplanation"}},
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  }
+}
