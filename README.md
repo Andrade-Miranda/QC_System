@@ -18,7 +18,9 @@ Deterministic and calibrated evidence, deterministic routing, and explicit polic
 
 The pipeline records a validated run context, validates dataset resources, summarizes per-case imaging and annotation properties, computes deterministic and calibrated QC evidence, compares evidence, produces nonbinding reasoning and critique artifacts, routes uncertain cases, applies deterministic final policy, and performs post-hoc internal evaluation.
 
-Methodology figure: [`paper/figures/method_1.pdf`](paper/figures/method_1.pdf).
+![AgentQC methodology figure](paper/figures/method_1.png)
+
+Methodology figure: [`PDF version`](paper/figures/method_1.pdf).
 
 Key implementation areas:
 
