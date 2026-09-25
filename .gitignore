@@ -9,6 +9,7 @@ venv/
 logs/
 outputs/
 reproducibility/outputs/
+archive/
 configs/thresholds.calibrated.*
 configs/paths.local.yaml
 archive/generated/**/*.tar.gz

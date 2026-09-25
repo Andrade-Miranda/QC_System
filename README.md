@@ -20,8 +20,6 @@ The pipeline records a validated run context, validates dataset resources, summa
 
 ![AgentQC methodology figure](paper/figures/method_1.png)
 
-Methodology figure: [`PDF version`](paper/figures/method_1.pdf).
-
 Key implementation areas:
 
 - `agents/`: workflow agents and deterministic policy/routing components.
@@ -110,7 +108,19 @@ See `reproducibility/README.md`.
 
 ## Citation
 
-If you use AgentQC, cite the manuscript metadata in `CITATION.cff`. No DOI is claimed in this repository unless one is added after formal publication.
+If you use AgentQC, cite the manuscript:
+
+```bibtex
+@misc{andrade2026agentqc,
+  author = {Andrade, Gustavo},
+  title = {AgentQC: Policy-Constrained Agentic Assessment of Task-Aware Reliability in Medical Imaging Datasets},
+  year = {2026},
+  note = {Manuscript},
+  url = {https://github.com/Andrade-Miranda/QC_System}
+}
+```
+
+No DOI is claimed in this repository unless one is added after formal publication.
 
 ## Limitations
 
