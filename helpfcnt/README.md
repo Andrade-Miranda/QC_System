@@ -1,1 +1,0 @@
-# PanTS-Pancreas-Tumor-Segmentation

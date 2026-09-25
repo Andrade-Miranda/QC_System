@@ -17,7 +17,6 @@ Generated outputs are written to `reproducibility/outputs/` and are not tracked.
 - `representative_cases/`: exports validated representative evidence-to-policy traces.
 - `reasoning_critic_audit/`: verifies nonbinding reasoning/critic audit counts.
 - `figures/poster/`: regenerates poster result figures from the same validated values.
-- `figures/paper/`: documents the current paper-figure reproduction status.
 
 ## Boundary
 
