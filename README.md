@@ -120,7 +120,6 @@ If you use AgentQC, cite the manuscript:
 }
 ```
 
-No DOI is claimed in this repository unless one is added after formal publication.
 
 ## Limitations
 
