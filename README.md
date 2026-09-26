@@ -111,15 +111,16 @@ See `reproducibility/README.md`.
 If you use AgentQC, cite the manuscript:
 
 ```bibtex
-@misc{andrade2026agentqc,
-  author = {Andrade, Gustavo},
-  title = {AgentQC: Policy-Constrained Agentic Assessment of Task-Aware Reliability in Medical Imaging Datasets},
-  year = {2026},
-  note = {Manuscript},
-  url = {https://github.com/Andrade-Miranda/QC_System}
+@inproceedings{andrade-miranda2026agentqc,
+  author    = {Andrade-Miranda, Gustavo and Cao, Yiheng and Collet, Tiphain and Soto Vega, Pedro J.},
+  title     = {AgentQC: Policy-Constrained Agentic Assessment of Task-Aware Reliability in Medical Imaging Datasets},
+  booktitle = {2nd Agentic AI for Medicine Workshop, 29th International Conference on Medical Image Computing and Computer Assisted Intervention (MICCAI 2026)},
+  year      = {2026},
+  month     = {September},
+  address   = {Strasbourg, France},
+  note      = {HAL: hal-05756257}
 }
 ```
-
 
 ## Limitations
 
