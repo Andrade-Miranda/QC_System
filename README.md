@@ -117,8 +117,7 @@ If you use AgentQC, cite the manuscript:
   booktitle = {2nd Agentic AI for Medicine Workshop, 29th International Conference on Medical Image Computing and Computer Assisted Intervention (MICCAI 2026)},
   year      = {2026},
   month     = {September},
-  address   = {Strasbourg, France},
-  note      = {HAL: hal-05756257}
+  address   = {Strasbourg, France}
 }
 ```
 
